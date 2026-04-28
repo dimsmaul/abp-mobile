@@ -1,23 +1,25 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class HomeController extends GetxController {
-  //TODO: Implement HomeController
+  final storage = GetStorage();
+  final user = Rxn<dynamic>();
 
-  final count = 0.obs;
   @override
   void onInit() {
     super.onInit();
+    user.value = storage.read('user');
   }
 
-  @override
-  void onReady() {
-    super.onReady();
+  void goToAttendance(String type) {
+    Get.toNamed('/attendance', arguments: type);
   }
 
-  @override
-  void onClose() {
-    super.onClose();
+  void goToPermit() {
+    Get.toNamed('/permit');
   }
 
-  void increment() => count.value++;
+  void goToProfile() {
+    Get.toNamed('/profile');
+  }
 }
