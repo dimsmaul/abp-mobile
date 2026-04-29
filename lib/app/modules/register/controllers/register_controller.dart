@@ -12,27 +12,34 @@ class RegisterController extends GetxController {
   final isLoading = false.obs;
 
   Future<void> register() async {
-    if (nameController.text.isEmpty || emailController.text.isEmpty || passwordController.text.isEmpty) {
+    if (nameController.text.isEmpty ||
+        emailController.text.isEmpty ||
+        passwordController.text.isEmpty) {
       Get.snackbar("Error", "Please fill all fields");
       return;
     }
 
     isLoading.value = true;
     try {
-      final response = await apiService.dio.post('/auth/register', data: {
-        'name': nameController.text,
-        'email': emailController.text,
-        'password': passwordController.text,
-      });
+      final response = await apiService.signUp(
+        name: nameController.text.trim(),
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
 
-      if (response.statusCode == 201) {
-        Get.snackbar("Success", "Account created successfully! Please login.");
-        Get.offNamed('/login');
+      if (response.statusCode == 200) {
+        // better-auth auto-signs-in after registration
+        // response: { user: {...}, session: { token: "..." } }
+        apiService.saveAuthData(response.data);
+        Get.snackbar("Success", "Account created successfully!");
+        Get.offAllNamed('/home');
       }
     } on DioException catch (e) {
       String message = "Registration failed";
-      if (e.response?.data != null && e.response?.data['message'] != null) {
-        message = e.response?.data['message'];
+      if (e.response?.data != null) {
+        message = e.response?.data['message'] ??
+            e.response?.data['error']?['message'] ??
+            message;
       }
       Get.snackbar("Error", message, snackPosition: SnackPosition.BOTTOM);
     } finally {

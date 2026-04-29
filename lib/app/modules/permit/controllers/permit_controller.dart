@@ -18,6 +18,7 @@ class PermitController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    print('[PermitController] Initialized');
     fetchMyPermits();
   }
 
@@ -26,17 +27,21 @@ class PermitController extends GetxController {
     try {
       final response = await apiService.dio.get('/permits/me');
       if (response.statusCode == 200) {
+        // New shape: { message, data: [...] }
         permits.assignAll(response.data['data']);
       }
-    } on DioException {
-      Get.snackbar("Error", "Failed to fetch permits");
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? 'Failed to fetch permits';
+      Get.snackbar("Error", msg);
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> submitPermit() async {
-    if (descriptionController.text.isEmpty || startDate.value == null || endDate.value == null) {
+    if (descriptionController.text.isEmpty ||
+        startDate.value == null ||
+        endDate.value == null) {
       Get.snackbar("Error", "Please fill all fields");
       return;
     }
@@ -51,12 +56,14 @@ class PermitController extends GetxController {
       });
 
       if (response.statusCode == 201) {
-        Get.snackbar("Success", "Permit request submitted");
+        final msg = response.data['message'] ?? 'Permit request submitted';
+        Get.snackbar("Success", msg);
         fetchMyPermits();
         Get.back();
       }
-    } on DioException {
-      Get.snackbar("Error", "Failed to submit permit");
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? 'Failed to submit permit';
+      Get.snackbar("Error", msg);
     } finally {
       isLoading.value = false;
     }

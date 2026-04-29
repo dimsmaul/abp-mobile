@@ -1,19 +1,21 @@
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../../../data/services/api_service.dart';
 
 class ProfileController extends GetxController {
-  final storage = GetStorage();
+  final apiService = Get.find<ApiService>();
+  final box = Hive.box('auth');
   final user = Rxn<dynamic>();
 
   @override
   void onInit() {
     super.onInit();
-    user.value = storage.read('user');
+    user.value = box.get('user');
+    print('[ProfileController] Initialized');
   }
 
   void logout() {
-    storage.remove('token');
-    storage.remove('user');
+    apiService.clearAuthData();
     Get.offAllNamed('/login');
   }
 }

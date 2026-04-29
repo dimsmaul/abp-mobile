@@ -1,14 +1,15 @@
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class HomeController extends GetxController {
-  final storage = GetStorage();
+  final box = Hive.box('auth');
   final user = Rxn<dynamic>();
 
   @override
   void onInit() {
     super.onInit();
-    user.value = storage.read('user');
+    user.value = box.get('user');
+    print('[HomeController] Initialized');
   }
 
   void goToAttendance(String type) {
