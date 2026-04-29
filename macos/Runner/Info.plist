@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocationUsageDescription</key>
+	<string>FieldTrack needs your location to verify attendance check-in/check-out.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FieldTrack needs camera access to take a selfie for attendance verification.</string>
 </dict>
 </plist>
