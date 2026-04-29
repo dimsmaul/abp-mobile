@@ -1,7 +1,19 @@
 import 'package:get/get.dart';
 
+import '../modules/attendance/bindings/attendance_binding.dart';
+import '../modules/attendance/views/attendance_view.dart';
+import '../modules/camera/bindings/camera_binding.dart';
+import '../modules/camera/views/camera_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
+import '../modules/login/bindings/login_binding.dart';
+import '../modules/login/views/login_view.dart';
+import '../modules/permit/bindings/permit_binding.dart';
+import '../modules/permit/views/permit_view.dart';
+import '../modules/profile/bindings/profile_binding.dart';
+import '../modules/profile/views/profile_view.dart';
+import '../modules/register/bindings/register_binding.dart';
+import '../modules/register/views/register_view.dart';
 
 part 'app_routes.dart';
 
@@ -15,6 +27,36 @@ class AppPages {
       name: _Paths.HOME,
       page: () => const HomeView(),
       binding: HomeBinding(),
+    ),
+    GetPage(
+      name: _Paths.PROFILE,
+      page: () => const ProfileView(),
+      binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: _Paths.PERMIT,
+      page: () => const PermitView(),
+      binding: PermitBinding(),
+    ),
+    GetPage(
+      name: _Paths.LOGIN,
+      page: () => const LoginView(),
+      binding: LoginBinding(),
+    ),
+    GetPage(
+      name: _Paths.REGISTER,
+      page: () => const RegisterView(),
+      binding: RegisterBinding(),
+    ),
+    GetPage(
+      name: _Paths.ATTENDANCE,
+      page: () => const AttendanceView(),
+      binding: AttendanceBinding(),
+    ),
+    GetPage(
+      name: _Paths.CAMERA,
+      page: () => const CameraView(),
+      binding: CameraBinding(),
     ),
   ];
 }
