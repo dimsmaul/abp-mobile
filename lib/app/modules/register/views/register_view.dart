@@ -12,91 +12,130 @@ class RegisterView extends GetView<RegisterController> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Create Account", style: textTheme.headlineLarge),
-              const SizedBox(height: 8),
-              Text(
-                "Join FieldTrack and start managing your tasks.",
-                style: textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 40),
-              TextField(
-                controller: controller.nameController,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: "Full Name",
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: controller.emailController,
-                keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: "Email Address",
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: controller.passwordController,
-                obscureText: true,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: "Password",
-                  prefixIcon: Icon(Icons.lock_outline),
-                ),
-              ),
-              const SizedBox(height: 40),
-              Obx(() => ElevatedButton(
-                    onPressed:
-                        controller.isLoading.value ? null : controller.register,
-                    child: controller.isLoading.value
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2.5),
-                          )
-                        : const Text("Register"),
-                  )),
-              const SizedBox(height: 20),
-              Center(
-                child: TextButton(
-                  onPressed: () => Get.back(),
-                  child: Text.rich(
-                    TextSpan(
-                      text: "Already have an account? ",
-                      style: textTheme.bodyMedium,
-                      children: const [
-                        TextSpan(
-                          text: "Login",
-                          style: TextStyle(
-                            color: AppTheme.primary,
-                            fontWeight: FontWeight.bold,
+      backgroundColor: AppTheme.primary,
+      body: Column(
+        children: [
+          // Top Blue Section
+          Expanded(
+            flex: 1,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: SafeArea(
+                bottom: false,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            padding: EdgeInsets.zero,
+                            alignment: Alignment.centerLeft,
+                            onPressed: () => Get.back(),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "Create\nAccount",
+                        style: textTheme.headlineLarge?.copyWith(
+                          color: Colors.white,
+                          fontSize: 32,
+                          height: 1.2,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
-            ],
+            ),
           ),
-        ),
+          
+          // Bottom White Section
+          Expanded(
+            flex: 3,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(32),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: controller.nameController,
+                      decoration: const InputDecoration(
+                        labelText: "Full Name",
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: controller.emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: "Email Address",
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: controller.passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: "Password",
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        suffixIcon: Icon(Icons.visibility_off_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Obx(() => ElevatedButton(
+                          onPressed: controller.isLoading.value ? null : controller.register,
+                          child: controller.isLoading.value
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2.5),
+                                )
+                              : const Text("Register"),
+                        )),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Get.back(),
+                        child: Text.rich(
+                          TextSpan(
+                            text: "Already have an account? ",
+                            style: textTheme.bodyMedium,
+                            children: const [
+                              TextSpan(
+                                text: "Log in",
+                                style: TextStyle(
+                                  color: AppTheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

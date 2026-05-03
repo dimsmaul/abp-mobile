@@ -1,42 +1,52 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
-import '../../../data/services/api_service.dart';
+import '../../../data/controllers/auth_controller.dart';
 
 class LoginController extends GetxController {
-  final apiService = Get.find<ApiService>();
+  final auth = Get.find<AuthController>();
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final isLoading = false.obs;
+  final obscurePassword = true.obs;
+
+  void toggleObscure() => obscurePassword.value = !obscurePassword.value;
 
   Future<void> login() async {
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      Get.snackbar("Error", "Please fill all fields");
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      Get.snackbar("Error", "Please fill all fields",
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    if (!GetUtils.isEmail(email)) {
+      Get.snackbar("Error", "Invalid email format",
+          snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
     isLoading.value = true;
     try {
-      final response = await apiService.signIn(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      if (response.statusCode == 200) {
-        // better-auth response: { user: {...}, session: { token: "..." } }
-        apiService.saveAuthData(response.data);
-        Get.offAllNamed('/home');
+      await auth.signIn(email: email, password: password);
+      if (auth.isAuthenticated.value) {
+        Get.offAllNamed('/dashboard');
+      } else {
+        Get.snackbar("Login Error",
+            "Token not returned. Please try again.",
+            snackPosition: SnackPosition.BOTTOM);
       }
     } on DioException catch (e) {
       String message = "Login failed";
       if (e.response?.data != null) {
-        // better-auth error: { message: "..." } or { error: { message: "..." } }
         message = e.response?.data['message'] ??
             e.response?.data['error']?['message'] ??
             message;
       }
-      Get.snackbar("Login Error", message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Login Error", message,
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }

@@ -53,5 +53,10 @@
 	<string>FieldTrack needs camera access to take a selfie for attendance verification.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>FieldTrack needs photo library access to attach images.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
