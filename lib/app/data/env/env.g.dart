@@ -9,5 +9,5 @@ part of 'env.dart';
 // coverage:ignore-file
 // ignore_for_file: type=lint
 final class _Env {
-  static const String baseUrl = 'https://api-fieldtrack.vercel.app/api';
+  static const String baseUrl = 'http://10.200.146.200:4000/api';
 }

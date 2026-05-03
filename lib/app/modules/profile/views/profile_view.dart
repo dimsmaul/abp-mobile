@@ -11,98 +11,120 @@ class ProfileView extends GetView<ProfileController> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
+      backgroundColor: AppTheme.scaffoldBg,
+      body: SafeArea(
         child: Column(
           children: [
-            const CircleAvatar(
-              radius: 60,
-              backgroundColor: AppTheme.cardBg,
-              child: Icon(Icons.person, size: 60, color: AppTheme.primary),
+            const SizedBox(height: 32),
+            Center(
+              child: GestureDetector(
+                onTap: controller.pickAndUploadProfilePicture,
+                child: Obx(() => CircleAvatar(
+                      radius: 52,
+                      backgroundColor: AppTheme.primaryLight,
+                      child: controller.isUploading.value
+                          ? const CircularProgressIndicator(
+                              color: AppTheme.primary)
+                          : const Icon(Icons.person,
+                              size: 56, color: AppTheme.primary),
+                    )),
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Obx(() => Text(
-                  controller.user.value?['name'] ?? "User Name",
-                  style: textTheme.headlineMedium,
+                  controller.auth.user.value?['name']?.toString() ?? "User",
+                  style: textTheme.titleLarge,
                 )),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Obx(() => Text(
-                  controller.user.value?['email'] ?? "email@example.com",
-                  style: textTheme.bodyLarge
-                      ?.copyWith(color: AppTheme.textSecondary),
+                  controller.auth.user.value?['email']?.toString() ?? "",
+                  style: textTheme.bodyMedium,
                 )),
-            const SizedBox(height: 40),
-            _ProfileInfoTile(
-              icon: Icons.work_outline,
-              label: "Department",
-              value: controller.user.value?['department'] ?? "Not Assigned",
-            ),
-            _ProfileInfoTile(
-              icon: Icons.badge_outlined,
-              label: "Role",
-              value: controller.user.value?['role']?.toString().toUpperCase() ??
-                  "EMPLOYEE",
-            ),
-            const Spacer(),
-            OutlinedButton(
-              onPressed: controller.logout,
-              child: const Text("Sign Out"),
+            const SizedBox(height: 4),
+            Obx(() {
+              final role =
+                  controller.auth.user.value?['role']?.toString() ?? '';
+              if (role.isEmpty) return const SizedBox.shrink();
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(role.toUpperCase(),
+                    style: const TextStyle(
+                        color: AppTheme.primary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700)),
+              );
+            }),
+            const SizedBox(height: 32),
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: ListView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _menu(
+                        icon: Icons.person_outline,
+                        title: "Update Profile",
+                        onTap: () {}),
+                    const Divider(height: 1, color: AppTheme.cardBorder),
+                    _menu(
+                        icon: Icons.lock_outline,
+                        title: "Change Password",
+                        onTap: () {}),
+                    const Divider(height: 1, color: AppTheme.cardBorder),
+                    _menu(
+                        icon: Icons.assignment_outlined,
+                        title: "My Reports",
+                        onTap: () => Get.toNamed('/reports')),
+                    const Divider(height: 1, color: AppTheme.cardBorder),
+                    _menu(
+                        icon: Icons.history,
+                        title: "Attendance History",
+                        onTap: () => Get.toNamed('/attendance-history')),
+                    const Divider(height: 1, color: AppTheme.cardBorder),
+                    _menu(
+                      icon: Icons.logout,
+                      title: "Sign Out",
+                      textColor: AppTheme.danger,
+                      iconColor: AppTheme.danger,
+                      onTap: controller.logout,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-// ── Profile Info Tile ──
-class _ProfileInfoTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _ProfileInfoTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(16),
+  Widget _menu({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color textColor = AppTheme.textPrimary,
+    Color iconColor = AppTheme.primary,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: iconColor, size: 20),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.primary),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      color: AppTheme.textHint, fontSize: 12)),
-              const SizedBox(height: 2),
-              Text(value,
-                  style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ],
-      ),
+      title: Text(title,
+          style: TextStyle(
+              color: textColor, fontWeight: FontWeight.w500, fontSize: 16)),
+      trailing: const Icon(Icons.chevron_right, color: AppTheme.textHint),
+      onTap: onTap,
     );
   }
 }

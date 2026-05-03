@@ -19,11 +19,22 @@ class CameraView extends GetView<CustomCameraController> {
 
           return Stack(
             children: [
-              // Full screen camera preview
+              // Full screen camera preview with proper aspect ratio scaling
               Positioned.fill(
-                child: CameraPreview(controller.cameraController!),
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.center,
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: controller.cameraController!.value.previewSize?.height ?? 1,
+                        height: controller.cameraController!.value.previewSize?.width ?? 1,
+                        child: CameraPreview(controller.cameraController!),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              
               // Top Bar (Back button)
               Positioned(
                 top: 16,

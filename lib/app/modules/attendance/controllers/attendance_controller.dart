@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:get/get.dart' hide Response;
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../data/services/api_service.dart';
+import '../../home/controllers/home_controller.dart';
 
 class AttendanceController extends GetxController {
   final apiService = Get.find<ApiService>();
@@ -86,10 +86,12 @@ class AttendanceController extends GetxController {
       );
 
       if (response.statusCode == 201) {
-        // New shape: { message, data }
         final msg = response.data['message'] ?? 'Attendance submitted!';
         Get.snackbar("Success", msg);
-        Get.offAllNamed('/home');
+        if (Get.isRegistered<HomeController>()) {
+          Get.find<HomeController>().refresh();
+        }
+        Get.offAllNamed('/dashboard');
       }
     } on dio_pkg.DioException catch (e) {
       // New error shape: { message, error: { code, ... } }

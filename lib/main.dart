@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:camera/camera.dart';
 import 'app/core/theme.dart';
+import 'app/data/controllers/auth_controller.dart';
 import 'app/data/services/api_service.dart';
 import 'app/routes/app_pages.dart';
 
@@ -16,19 +17,17 @@ void main() async {
   try {
     cameras = await availableCameras();
   } catch (e) {
-    print('Error initializing cameras: $e');
+    debugPrint('Camera init error: $e');
   }
 
-  final apiService = Get.put(ApiService());
-
-  // Determine initial route based on stored session
-  final initialRoute = apiService.isLoggedIn ? '/home' : '/login';
+  Get.put<ApiService>(ApiService(), permanent: true);
+  Get.put<AuthController>(AuthController(), permanent: true);
 
   runApp(
     GetMaterialApp(
       title: "FieldTrack",
-      theme: AppTheme.darkTheme,
-      initialRoute: initialRoute,
+      theme: AppTheme.lightTheme,
+      initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
       debugShowCheckedModeBanner: false,
     ),
