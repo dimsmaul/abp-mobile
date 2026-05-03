@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response;
+import '../../../data/controllers/auth_controller.dart';
 import '../../../data/services/api_service.dart';
 
 class RegisterController extends GetxController {
   final apiService = Get.find<ApiService>();
+  final auth = Get.find<AuthController>();
 
   final nameController = TextEditingController();
   final emailController = TextEditingController();
@@ -27,12 +29,12 @@ class RegisterController extends GetxController {
         password: passwordController.text,
       );
 
-      if (response.statusCode == 200) {
-        // better-auth auto-signs-in after registration
-        // response: { user: {...}, session: { token: "..." } }
+      if (response.statusCode == 200 || response.statusCode == 201) {
         apiService.saveAuthData(response.data);
+        auth.user.value = apiService.currentUser;
+        auth.isAuthenticated.value = apiService.isLoggedIn;
         Get.snackbar("Success", "Account created successfully!");
-        Get.offAllNamed('/home');
+        Get.offAllNamed(auth.isAuthenticated.value ? '/dashboard' : '/login');
       }
     } on DioException catch (e) {
       String message = "Registration failed";

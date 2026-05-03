@@ -3,28 +3,30 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  // ── Color Palette ──
-  static const Color primary = Color(0xFF3B82F6);
-  static const Color primaryDark = Color(0xFF2563EB);
+  // ── Color Palette (Light Theme) ──
+  static const Color primary = Color(0xFF2563EB); // Vibrant Blue
+  static const Color primaryDark = Color(0xFF1D4ED8);
+  static const Color primaryLight = Color(0xFFDBEAFE);
+  
   static const Color success = Color(0xFF10B981);
   static const Color danger = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
 
-  static const Color scaffoldBg = Color(0xFF0F172A);
-  static const Color cardBg = Color(0xFF1E293B);
-  static const Color cardBorder = Color(0xFF334155);
+  static const Color scaffoldBg = Color(0xFFF8FAFC); // Very light gray background
+  static const Color cardBg = Colors.white;
+  static const Color cardBorder = Color(0xFFE2E8F0);
 
-  static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color textHint = Color(0xFF64748B);
+  static const Color textPrimary = Color(0xFF0F172A); // Dark slate
+  static const Color textSecondary = Color(0xFF475569); // Medium slate
+  static const Color textHint = Color(0xFF94A3B8); // Light slate
 
   // ── ThemeData ──
-  static ThemeData get darkTheme {
+  static ThemeData get lightTheme {
     return ThemeData(
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       scaffoldBackgroundColor: scaffoldBg,
       primaryColor: primary,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         primary: primary,
         secondary: primaryDark,
         surface: cardBg,
@@ -37,7 +39,7 @@ class AppTheme {
 
       // ── AppBar ──
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: textPrimary),
@@ -51,18 +53,18 @@ class AppTheme {
       // ── Input Fields ──
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: cardBg,
+        fillColor: Colors.white,
         labelStyle: const TextStyle(color: textHint),
         hintStyle: const TextStyle(color: textHint),
         prefixIconColor: textHint,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: cardBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: cardBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -90,9 +92,9 @@ class AppTheme {
       // ── Outlined Button ──
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: danger,
+          foregroundColor: primary,
           minimumSize: const Size(double.infinity, 56),
-          side: const BorderSide(color: danger),
+          side: const BorderSide(color: primary),
           textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
@@ -107,6 +109,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
 
@@ -114,20 +117,14 @@ class AppTheme {
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primary,
         foregroundColor: Colors.white,
+        elevation: 4,
       ),
 
       // ── Bottom Sheet ──
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: scaffoldBg,
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-      ),
-
-      // ── Dropdown ──
-      dropdownMenuTheme: DropdownMenuThemeData(
-        menuStyle: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(cardBg),
         ),
       ),
 
@@ -135,6 +132,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: cardBg,
         elevation: 0,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: cardBorder),
@@ -143,8 +141,8 @@ class AppTheme {
 
       // ── Snackbar ──
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: cardBg,
-        contentTextStyle: const TextStyle(color: textPrimary),
+        backgroundColor: textPrimary,
+        contentTextStyle: const TextStyle(color: Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
@@ -158,7 +156,7 @@ class AppTheme {
         bodyLarge: TextStyle(color: textPrimary, fontSize: 16),
         bodyMedium: TextStyle(color: textSecondary, fontSize: 14),
         bodySmall: TextStyle(color: textHint, fontSize: 12),
-        labelLarge: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+        labelLarge: TextStyle(color: primary, fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
