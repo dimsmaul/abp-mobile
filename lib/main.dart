@@ -1,15 +1,35 @@
 import 'package:flutter/material.dart';
-
 import 'package:get/get.dart';
-
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:camera/camera.dart';
+import 'app/core/theme.dart';
+import 'app/data/controllers/auth_controller.dart';
+import 'app/data/services/api_service.dart';
 import 'app/routes/app_pages.dart';
 
-void main() {
+List<CameraDescription> cameras = [];
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('auth');
+
+  try {
+    cameras = await availableCameras();
+  } catch (e) {
+    debugPrint('Camera init error: $e');
+  }
+
+  Get.put<ApiService>(ApiService(), permanent: true);
+  Get.put<AuthController>(AuthController(), permanent: true);
+
   runApp(
     GetMaterialApp(
-      title: "Application",
+      title: "FieldTrack",
+      theme: AppTheme.lightTheme,
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
+      debugShowCheckedModeBanner: false,
     ),
   );
 }
