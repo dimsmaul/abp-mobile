@@ -87,18 +87,32 @@ class ApiService extends GetxService {
   }
 
   // ── Reports ──────────────────────────────────────
+  // Mobile uses /mobile/reports* (employee scope, ownership-checked on BE).
   Future<Response> createReport(FormData data) =>
-      _dio.post('/reports', data: data);
+      _dio.post('/mobile/reports', data: data);
 
   Future<Response> fetchMyReports({int page = 1, int limit = 20, String? status}) {
-    return _dio.get('/reports/me', queryParameters: {
+    return _dio.get('/mobile/reports', queryParameters: {
       'page': page,
       'limit': limit,
       if (status != null) 'status': status,
     });
   }
 
-  Future<Response> fetchReportDetail(String id) => _dio.get('/reports/$id');
+  Future<Response> fetchReportDetail(String id) =>
+      _dio.get('/mobile/reports/$id');
+
+  // ── Permits ──────────────────────────────────────
+  Future<Response> fetchMyPermits({int page = 1, int limit = 20, String? status}) {
+    return _dio.get('/permits/me', queryParameters: {
+      'page': page,
+      'limit': limit,
+      if (status != null) 'status': status,
+    });
+  }
+
+  Future<Response> submitPermit(Map<String, dynamic> body) =>
+      _dio.post('/permits', data: body);
 
   // ── Auth persistence ─────────────────────────────
   /// Accept any of these shapes from better-auth or wrapped envelope:

@@ -14,36 +14,34 @@ class RegisterController extends GetxController {
   final isLoading = false.obs;
 
   Future<void> register() async {
-    if (nameController.text.isEmpty ||
-        emailController.text.isEmpty ||
+    if (nameController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
         passwordController.text.isEmpty) {
       Get.snackbar("Error", "Please fill all fields");
+      return;
+    }
+    if (passwordController.text.length < 8) {
+      Get.snackbar("Error", "Password minimum 8 characters");
       return;
     }
 
     isLoading.value = true;
     try {
-      final response = await apiService.signUp(
+      await auth.signUp(
         name: nameController.text.trim(),
         email: emailController.text.trim(),
         password: passwordController.text,
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        apiService.saveAuthData(response.data);
-        auth.user.value = apiService.currentUser;
-        auth.isAuthenticated.value = apiService.isLoggedIn;
-        Get.snackbar("Success", "Account created successfully!");
-        Get.offAllNamed(auth.isAuthenticated.value ? '/dashboard' : '/login');
-      }
+      Get.snackbar("Success", "Account created successfully!");
+      Get.offAllNamed(auth.isAuthenticated.value ? '/dashboard' : '/login');
     } on DioException catch (e) {
-      String message = "Registration failed";
-      if (e.response?.data != null) {
-        message = e.response?.data['message'] ??
-            e.response?.data['error']?['message'] ??
-            message;
-      }
-      Get.snackbar("Error", message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        "Error",
+        dioErrorMessage(e, 'Registration failed'),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar("Error", e.toString(), snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }

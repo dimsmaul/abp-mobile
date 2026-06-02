@@ -31,25 +31,33 @@ class LoginController extends GetxController {
     isLoading.value = true;
     try {
       await auth.signIn(email: email, password: password);
-      if (auth.isAuthenticated.value) {
-        Get.offAllNamed('/dashboard');
-      } else {
-        Get.snackbar("Login Error",
-            "Token not returned. Please try again.",
-            snackPosition: SnackPosition.BOTTOM);
-      }
+      Get.offAllNamed('/dashboard');
     } on DioException catch (e) {
-      String message = "Login failed";
-      if (e.response?.data != null) {
-        message = e.response?.data['message'] ??
-            e.response?.data['error']?['message'] ??
-            message;
-      }
-      Get.snackbar("Login Error", message,
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        "Login Error",
+        _dioMsg(e, 'Login failed'),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.snackbar(
+        "Login Error",
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
     }
+  }
+
+  String _dioMsg(DioException e, String fallback) {
+    final data = e.response?.data;
+    if (data is Map) {
+      final m = data['message'];
+      if (m is String && m.isNotEmpty) return m;
+      final err = data['error'];
+      if (err is Map && err['message'] is String) return err['message'] as String;
+    }
+    return e.message ?? fallback;
   }
 
   @override

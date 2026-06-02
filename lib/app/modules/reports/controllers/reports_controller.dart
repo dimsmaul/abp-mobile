@@ -55,9 +55,11 @@ class ReportsController extends GetxController {
 
   // ── Detail ──────────────────────────────────────
   Future<void> openDetail(String id) async {
+    // Set loading + clear before navigating so detail view renders the spinner
+    // immediately, not a flash of empty state.
     detail.value = null;
-    Get.toNamed('/reports/detail', arguments: id);
     isDetailLoading.value = true;
+    Get.toNamed('/reports/detail', arguments: id);
     try {
       final res = await api.fetchReportDetail(id);
       if (res.statusCode == 200) {
