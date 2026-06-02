@@ -2,11 +2,14 @@ import 'dart:io';
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:get/get.dart' hide Response;
 import 'package:geolocator/geolocator.dart';
+import '../../../core/image_utils.dart';
 import '../../../data/services/api_service.dart';
+import '../../../data/services/attendance_queue_service.dart';
 import '../../home/controllers/home_controller.dart';
 
 class AttendanceController extends GetxController {
   final apiService = Get.find<ApiService>();
+  final attendanceQueueService = Get.find<AttendanceQueueService>();
 
   final isLoading = false.obs;
   final currentPosition = Rxn<Position>();
@@ -70,9 +73,10 @@ class AttendanceController extends GetxController {
 
     isLoading.value = true;
     try {
-      String fileName = image.value!.path.split('/').last;
+      final sanitized = await stripExif(File(image.value!.path));
+      String fileName = sanitized.path.split('/').last;
       dio_pkg.FormData formData = dio_pkg.FormData.fromMap({
-        "photo": await dio_pkg.MultipartFile.fromFile(image.value!.path,
+        "photo": await dio_pkg.MultipartFile.fromFile(sanitized.path,
             filename: fileName),
         "latitude": currentPosition.value!.latitude,
         "longitude": currentPosition.value!.longitude,
@@ -98,11 +102,34 @@ class AttendanceController extends GetxController {
         Get.offAllNamed('/dashboard');
       }
     } on dio_pkg.DioException catch (e) {
-      // New error shape: { message, error: { code, ... } }
-      final msg = e.response?.data?['message'] ?? 'Failed to submit attendance';
-      Get.snackbar("Error", msg);
+      // Network failure → queue offline & navigate as if accepted.
+      if (_isNetworkError(e)) {
+        await attendanceQueueService.enqueue(
+          type: type,
+          photoPath: image.value!.path,
+          lat: currentPosition.value!.latitude,
+          lng: currentPosition.value!.longitude,
+        );
+        Get.snackbar(
+          "Tersimpan offline",
+          "Akan dikirim saat koneksi pulih",
+        );
+        Get.offAllNamed('/dashboard');
+      } else {
+        // 4xx/5xx — existing error flow.
+        final msg = e.response?.data?['message'] ?? 'Failed to submit attendance';
+        Get.snackbar("Error", msg);
+      }
     } finally {
       isLoading.value = false;
     }
+  }
+
+  bool _isNetworkError(dio_pkg.DioException e) {
+    return e.type == dio_pkg.DioExceptionType.connectionError ||
+        e.type == dio_pkg.DioExceptionType.connectionTimeout ||
+        e.type == dio_pkg.DioExceptionType.receiveTimeout ||
+        e.type == dio_pkg.DioExceptionType.sendTimeout ||
+        (e.error is SocketException);
   }
 }

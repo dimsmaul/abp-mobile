@@ -103,7 +103,26 @@ class LoginView extends GetView<LoginController> {
                             ),
                           ),
                         )),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => Get.toNamed('/forget-password'),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          "Lupa Password?",
+                          style: TextStyle(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Obx(() => ElevatedButton(
                           onPressed: controller.isLoading.value
                               ? null
