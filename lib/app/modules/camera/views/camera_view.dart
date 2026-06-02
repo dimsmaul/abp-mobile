@@ -45,34 +45,79 @@ class CameraView extends GetView<CustomCameraController> {
                 ),
               ),
 
+              // Face-check overlay (only when requireFace + verifying)
+              Obx(() {
+                if (!controller.isVerifying.value) return const SizedBox.shrink();
+                return Container(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  alignment: Alignment.center,
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 16),
+                      Text(
+                        'Memverifikasi wajah…',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+
+              // Hint banner when face required
+              if (controller.requireFace)
+                Positioned(
+                  top: 16,
+                  left: 64,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Pastikan wajah Anda terlihat jelas di tengah frame.',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ),
+
               // Bottom Control Bar
               Positioned(
                 bottom: 40,
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: GestureDetector(
-                    onTap: controller.takePicture,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                      child: Center(
+                  child: Obx(() {
+                    final busy = controller.isVerifying.value;
+                    return GestureDetector(
+                      onTap: busy ? null : controller.takePicture,
+                      child: Opacity(
+                        opacity: busy ? 0.5 : 1.0,
                         child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: const BoxDecoration(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white,
+                            border: Border.all(color: Colors.white, width: 4),
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                          child: Center(
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  }),
                 ),
               ),
             ],
