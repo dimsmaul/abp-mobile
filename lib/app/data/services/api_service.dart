@@ -65,6 +65,12 @@ class ApiService extends GetxService {
 
   Future<Response> signOut() => _dio.post('/auth/sign-out');
 
+  Future<Response> forgetPassword(String email) =>
+      _dio.post('/auth/forget-password', data: {'email': email});
+
+  Future<Response> resetPassword({required String token, required String newPassword}) =>
+      _dio.post('/auth/reset-password', data: {'token': token, 'newPassword': newPassword});
+
   // ── Attendance ───────────────────────────────────
   Future<Response> checkIn(FormData data) =>
       _dio.post('/mobile/attendances/check-in', data: data);
