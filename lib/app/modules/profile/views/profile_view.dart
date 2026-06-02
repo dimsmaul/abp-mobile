@@ -18,16 +18,51 @@ class ProfileView extends GetView<ProfileController> {
             const SizedBox(height: 32),
             Center(
               child: GestureDetector(
-                onTap: controller.pickAndUploadProfilePicture,
-                child: Obx(() => CircleAvatar(
-                      radius: 52,
-                      backgroundColor: AppTheme.primaryLight,
-                      child: controller.isUploading.value
-                          ? const CircularProgressIndicator(
-                              color: AppTheme.primary)
-                          : const Icon(Icons.person,
-                              size: 56, color: AppTheme.primary),
-                    )),
+                onTap: () => _showAvatarSheet(context),
+                child: Obx(() {
+                  final user = controller.auth.user.value;
+                  final imageUrl = user?['image']?.toString();
+                  final name = user?['name']?.toString() ?? 'User';
+                  final initial =
+                      name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+                  final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 52,
+                        backgroundColor: AppTheme.primaryLight,
+                        backgroundImage:
+                            hasImage ? NetworkImage(imageUrl) : null,
+                        child: hasImage
+                            ? null
+                            : Text(
+                                initial,
+                                style: const TextStyle(
+                                  color: AppTheme.primary,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                      if (controller.isUploadingAvatar.value)
+                        Container(
+                          width: 104,
+                          height: 104,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                }),
               ),
             ),
             const SizedBox(height: 16),
@@ -68,8 +103,8 @@ class ProfileView extends GetView<ProfileController> {
                   children: [
                     _menu(
                         icon: Icons.person_outline,
-                        title: "Update Profile",
-                        onTap: () {}),
+                        title: "Edit Profile",
+                        onTap: () => _showEditProfileDialog(context)),
                     const Divider(height: 1, color: AppTheme.cardBorder),
                     _menu(
                         icon: Icons.lock_outline,
@@ -125,6 +160,120 @@ class ProfileView extends GetView<ProfileController> {
               color: textColor, fontWeight: FontWeight.w500, fontSize: 16)),
       trailing: const Icon(Icons.chevron_right, color: AppTheme.textHint),
       onTap: onTap,
+    );
+  }
+
+  void _showAvatarSheet(BuildContext context) {
+    if (controller.isUploadingAvatar.value) return;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined,
+                  color: AppTheme.primary),
+              title: const Text('Ambil Foto'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                controller.pickAndUploadProfilePicture();
+              },
+            ),
+            const Divider(height: 1, color: AppTheme.cardBorder),
+            ListTile(
+              leading: const Icon(Icons.close, color: AppTheme.textHint),
+              title: const Text('Batal'),
+              onTap: () => Navigator.of(ctx).pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context) {
+    final user = controller.auth.user.value;
+    final nameCtl =
+        TextEditingController(text: user?['name']?.toString() ?? '');
+    final deptCtl =
+        TextEditingController(text: user?['department']?.toString() ?? '');
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtl,
+              decoration: const InputDecoration(
+                labelText: 'Nama',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: deptCtl,
+              decoration: const InputDecoration(
+                labelText: 'Departemen',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Batal'),
+          ),
+          Obx(() => ElevatedButton(
+                onPressed: controller.isSavingProfile.value
+                    ? null
+                    : () async {
+                        final current = controller.auth.user.value;
+                        final origName = current?['name']?.toString() ?? '';
+                        final origDept =
+                            current?['department']?.toString() ?? '';
+                        final newName = nameCtl.text.trim();
+                        final newDept = deptCtl.text.trim();
+
+                        final namePayload =
+                            newName != origName && newName.isNotEmpty
+                                ? newName
+                                : null;
+                        final deptPayload =
+                            newDept != origDept ? newDept : null;
+
+                        if (namePayload == null && deptPayload == null) {
+                          Navigator.of(ctx).pop();
+                          return;
+                        }
+
+                        final ok = await controller.saveProfile(
+                          name: namePayload,
+                          department: deptPayload,
+                        );
+                        if (ok && ctx.mounted) Navigator.of(ctx).pop();
+                      },
+                child: controller.isSavingProfile.value
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Simpan'),
+              )),
+        ],
+      ),
     );
   }
 }

@@ -120,6 +120,17 @@ class ApiService extends GetxService {
   Future<Response> submitPermit(Map<String, dynamic> body) =>
       _dio.post('/permits', data: body);
 
+  // ── Profile ──────────────────────────────────────
+  Future<Response> updateProfile({String? name, String? department}) {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (department != null) body['department'] = department;
+    return _dio.patch('/mobile/me', data: body);
+  }
+
+  Future<Response> uploadAvatar(FormData data) =>
+      _dio.post('/mobile/me/avatar', data: data);
+
   // ── Auth persistence ─────────────────────────────
   /// Accept any of these shapes from better-auth or wrapped envelope:
   /// { token, user }
