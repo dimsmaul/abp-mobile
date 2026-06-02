@@ -54,7 +54,8 @@ class AttendanceController extends GetxController {
   }
 
   Future<void> pickImage() async {
-    final result = await Get.toNamed('/camera');
+    // Selfie attendance — ML Kit face presence check enforced in camera screen.
+    final result = await Get.toNamed('/camera', arguments: {'requireFace': true});
     if (result != null && result is String) {
       image.value = File(result);
     }
