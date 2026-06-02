@@ -85,9 +85,13 @@ class AttendanceController extends GetxController {
         data: formData,
       );
 
-      if (response.statusCode == 201) {
-        final msg = response.data['message'] ?? 'Attendance submitted!';
-        Get.snackbar("Success", msg);
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final body = response.data;
+        final payload = body is Map && body['data'] is Map ? body['data'] as Map : null;
+        final isWithinZone = payload?['isWithinZone'] == true;
+        final baseMsg = (body is Map ? body['message'] : null) ?? 'Attendance submitted!';
+        final zoneNote = isWithinZone ? 'Dalam zona ✓' : 'Di luar zona ⚠';
+        Get.snackbar("Success", '$baseMsg · $zoneNote');
         if (Get.isRegistered<HomeController>()) {
           Get.find<HomeController>().refresh();
         }

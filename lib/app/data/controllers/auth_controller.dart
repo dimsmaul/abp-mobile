@@ -51,19 +51,43 @@ class AuthController extends GetxController {
 
   Future<void> signIn({required String email, required String password}) async {
     final res = await api.signIn(email: email, password: password);
-    if (res.statusCode == 200 && res.data != null) {
-      // Save user from body.
-      api.saveAuthData(res.data);
-
-      // Bearer plugin exposes signed token via `set-auth-token` header.
-      // Body `token` is raw session ID — won't authenticate as Bearer.
-      final headerToken = res.headers.value('set-auth-token');
-      if (headerToken != null && headerToken.isNotEmpty) {
-        api.box.put('token', headerToken);
-      }
-      user.value = api.currentUser;
-      isAuthenticated.value = api.isLoggedIn;
+    if (res.statusCode != 200 || res.data == null) {
+      throw Exception('Login failed: unexpected status ${res.statusCode}');
     }
+    _persistAuthFromResponse(res);
+    if (!api.isLoggedIn) {
+      throw Exception('Login failed: no auth token in response');
+    }
+  }
+
+  Future<void> signUp({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final res = await api.signUp(name: name, email: email, password: password);
+    if ((res.statusCode != 200 && res.statusCode != 201) || res.data == null) {
+      throw Exception('Sign-up failed: unexpected status ${res.statusCode}');
+    }
+    _persistAuthFromResponse(res);
+    if (!api.isLoggedIn) {
+      throw Exception('Sign-up failed: no auth token in response');
+    }
+  }
+
+  void _persistAuthFromResponse(Response res) {
+    // Save user payload from body.
+    api.saveAuthData(res.data);
+
+    // Bearer plugin exposes signed token via `set-auth-token` header.
+    // Body `token` is raw session id — won't authenticate as Bearer.
+    final headerToken = res.headers.value('set-auth-token');
+    if (headerToken != null && headerToken.isNotEmpty) {
+      api.box.put('token', headerToken);
+    }
+
+    user.value = api.currentUser;
+    isAuthenticated.value = api.isLoggedIn;
   }
 
   Future<void> signOut() async {
