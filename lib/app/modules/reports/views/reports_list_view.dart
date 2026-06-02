@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants.dart';
 import '../../../core/theme.dart';
 import '../controllers/reports_controller.dart';
 
@@ -60,7 +61,7 @@ class ReportsListView extends GetView<ReportsController> {
           itemBuilder: (_, i) {
             final f = filters[i];
             return ChoiceChip(
-              label: Text(f == null ? 'All' : _statusLabel(f)),
+              label: Text(f == null ? 'All' : reportStatusLabel(f)),
               selected: current == f,
               onSelected: (_) => controller.setFilter(f),
             );
@@ -95,7 +96,7 @@ class ReportsListView extends GetView<ReportsController> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _categoryLabel(item['category']?.toString() ?? 'other'),
+                    reportCategoryLabel(item['category']?.toString() ?? 'other'),
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 16),
                   ),
@@ -168,25 +169,9 @@ class ReportsListView extends GetView<ReportsController> {
     );
   }
 
-  String _categoryLabel(String c) {
-    return c[0].toUpperCase() + c.substring(1);
-  }
-
-  String _statusLabel(String s) {
-    return s
-        .split('_')
-        .map((w) => w[0].toUpperCase() + w.substring(1))
-        .join(' ');
-  }
-
   Widget _statusBadge(String status) {
-    final colors = {
-      'pending': (AppTheme.warning, 'Pending'),
-      'approved': (AppTheme.success, 'Approved'),
-      'rejected': (AppTheme.danger, 'Rejected'),
-      'need_revision': (Colors.orange, 'Need Revision'),
-    };
-    final (color, label) = colors[status] ?? (AppTheme.textHint, status);
+    final color = reportStatusColor(status);
+    final label = reportStatusLabel(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

@@ -3,6 +3,8 @@ import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart' hide Response;
+import '../../../core/constants.dart';
+import '../../../core/image_utils.dart';
 import '../../../data/services/api_service.dart';
 
 class ReportsController extends GetxController {
@@ -24,7 +26,7 @@ class ReportsController extends GetxController {
   final image = Rxn<File>();
   final position = Rxn<Position>();
 
-  static const categories = ['weather', 'technical', 'progress', 'other'];
+  static const categories = kReportCategories;
 
   @override
   void onInit() {
@@ -111,9 +113,10 @@ class ReportsController extends GetxController {
 
     isSubmitting.value = true;
     try {
-      final fileName = image.value!.path.split('/').last;
+      final sanitized = await stripExif(File(image.value!.path));
+      final fileName = sanitized.path.split('/').last;
       final form = dio_pkg.FormData.fromMap({
-        "photo": await dio_pkg.MultipartFile.fromFile(image.value!.path,
+        "photo": await dio_pkg.MultipartFile.fromFile(sanitized.path,
             filename: fileName),
         "category": category.value,
         "description": descriptionController.text.trim(),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants.dart';
 import '../../../core/theme.dart';
 import '../controllers/permit_controller.dart';
 
@@ -65,19 +66,10 @@ class _PermitCard extends StatelessWidget {
   final dynamic permit;
   const _PermitCard({required this.permit});
 
-  Color get _statusColor {
-    switch (permit['status']) {
-      case 'approved':
-        return AppTheme.success;
-      case 'rejected':
-        return AppTheme.danger;
-      default:
-        return AppTheme.warning;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final statusStr = permit['status']?.toString() ?? 'pending';
+    final typeStr = permit['type']?.toString() ?? '';
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -93,12 +85,12 @@ class _PermitCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildBadge(
-                permit['type'].toString().toUpperCase(),
+                permitTypeLabel(typeStr).toUpperCase(),
                 AppTheme.primary,
               ),
               _buildBadge(
-                permit['status'].toString().toUpperCase(),
-                _statusColor,
+                permitStatusLabel(statusStr).toUpperCase(),
+                permitStatusColor(statusStr),
               ),
             ],
           ),
