@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme.dart';
+import '../../../data/services/attendance_queue_service.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -74,6 +75,7 @@ class HomeView extends GetView<HomeController> {
                   style: textTheme.titleMedium,
                 ),
               ),
+              _buildPendingBadge(),
             ],
           ),
         ),
@@ -83,6 +85,43 @@ class HomeView extends GetView<HomeController> {
         ),
       ],
     );
+  }
+
+  Widget _buildPendingBadge() {
+    if (!Get.isRegistered<AttendanceQueueService>()) {
+      return const SizedBox.shrink();
+    }
+    final queue = Get.find<AttendanceQueueService>();
+    return Obx(() {
+      final count = queue.pendingCount.value;
+      if (count <= 0) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppTheme.danger.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppTheme.danger.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 12, color: AppTheme.danger),
+              const SizedBox(width: 4),
+              Text(
+                '$count pending',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.danger,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildAttendanceCard(TextTheme textTheme) {

@@ -4,8 +4,39 @@ import 'package:intl/intl.dart';
 import '../../../core/theme.dart';
 import '../controllers/attendance_history_controller.dart';
 
-class AttendanceHistoryView extends GetView<AttendanceHistoryController> {
+class AttendanceHistoryView extends StatefulWidget {
   const AttendanceHistoryView({super.key});
+
+  @override
+  State<AttendanceHistoryView> createState() => _AttendanceHistoryViewState();
+}
+
+class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
+  final AttendanceHistoryController controller =
+      Get.find<AttendanceHistoryController>();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (controller.hasMore.value && !controller.isLoadingMore.value) {
+        controller.fetchMore();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +59,34 @@ class AttendanceHistoryView extends GetView<AttendanceHistoryController> {
           grouped.putIfAbsent(key, () => []).add(it);
         }
         final keys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
+        final showLoader = controller.isLoadingMore.value;
         return RefreshIndicator(
-          onRefresh: controller.fetch,
+          onRefresh: () => controller.fetch(reset: true),
           child: ListView.builder(
+            controller: _scrollController,
             padding: const EdgeInsets.all(16),
-            itemCount: keys.length,
+            itemCount: keys.length + 1,
             itemBuilder: (_, i) {
+              if (i == keys.length) {
+                if (showLoader) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (!controller.hasMore.value) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: Text(
+                        "No more records",
+                        style: TextStyle(color: AppTheme.textHint, fontSize: 12),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }
               final date = keys[i];
               final entries = grouped[date]!;
               return _dateGroup(date, entries);

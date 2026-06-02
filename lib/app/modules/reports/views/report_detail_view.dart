@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants.dart';
 import '../../../core/theme.dart';
 import '../controllers/reports_controller.dart';
 
@@ -14,7 +15,7 @@ class ReportDetailView extends GetView<ReportsController> {
       appBar: AppBar(title: const Text("Report Detail")),
       body: Obx(() {
         if (controller.isDetailLoading.value && controller.detail.value == null) {
-          return const Center(child: CircularProgressIndicator());
+          return const _DetailSkeleton();
         }
         final d = controller.detail.value;
         if (d == null) return const SizedBox.shrink();
@@ -77,7 +78,7 @@ class ReportDetailView extends GetView<ReportsController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_label(cat),
+                Text(reportCategoryLabel(cat),
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, fontSize: 18)),
                 const SizedBox(height: 4),
@@ -151,8 +152,6 @@ class ReportDetailView extends GetView<ReportsController> {
     );
   }
 
-  String _label(String c) => c[0].toUpperCase() + c.substring(1);
-
   String _dateStr(String? iso) {
     if (iso == null) return '-';
     final d = DateTime.tryParse(iso);
@@ -161,13 +160,8 @@ class ReportDetailView extends GetView<ReportsController> {
   }
 
   Widget _statusBadge(String status) {
-    final colors = {
-      'pending': (AppTheme.warning, 'Pending'),
-      'approved': (AppTheme.success, 'Approved'),
-      'rejected': (AppTheme.danger, 'Rejected'),
-      'need_revision': (Colors.orange, 'Need Revision'),
-    };
-    final (color, label) = colors[status] ?? (AppTheme.textHint, status);
+    final color = reportStatusColor(status);
+    final label = reportStatusLabel(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -177,6 +171,110 @@ class ReportDetailView extends GetView<ReportsController> {
       child: Text(label,
           style: TextStyle(
               color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+// ── Loading Skeleton ────────────────────────────────────────
+class _DetailSkeleton extends StatefulWidget {
+  const _DetailSkeleton();
+
+  @override
+  State<_DetailSkeleton> createState() => _DetailSkeletonState();
+}
+
+class _DetailSkeletonState extends State<_DetailSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: AnimatedBuilder(
+        animation: _ctrl,
+        builder: (_, __) {
+          final opacity = 0.4 + (_ctrl.value * 0.4);
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _box(opacity, height: 240, radius: 16),
+              const SizedBox(height: 20),
+              _card(opacity, [
+                _box(opacity, height: 18, widthFactor: 0.4),
+                const SizedBox(height: 8),
+                _box(opacity, height: 12, widthFactor: 0.6),
+              ]),
+              const SizedBox(height: 16),
+              _card(opacity, [
+                _box(opacity, height: 12, widthFactor: 0.3),
+                const SizedBox(height: 12),
+                _box(opacity, height: 12, widthFactor: 0.9),
+                const SizedBox(height: 6),
+                _box(opacity, height: 12, widthFactor: 0.8),
+                const SizedBox(height: 6),
+                _box(opacity, height: 12, widthFactor: 0.5),
+              ]),
+              const SizedBox(height: 16),
+              _card(opacity, [
+                _box(opacity, height: 12, widthFactor: 0.3),
+                const SizedBox(height: 12),
+                _box(opacity, height: 12, widthFactor: 0.7),
+              ]),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _box(
+    double opacity, {
+    required double height,
+    double widthFactor = 1.0,
+    double radius = 8,
+  }) {
+    return FractionallySizedBox(
+      widthFactor: widthFactor,
+      alignment: Alignment.centerLeft,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: AppTheme.cardBorder.withValues(alpha: opacity),
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
+    );
+  }
+
+  Widget _card(double opacity, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 }

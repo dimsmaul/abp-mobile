@@ -65,4 +65,5 @@ class HomeController extends GetxController {
   void goToReports() => Get.toNamed('/reports');
   void goToHistory() => Get.toNamed('/attendance-history');
   void goToProfile() => Get.toNamed('/profile');
+  void goToPermit() => Get.toNamed('/permit');
 }
