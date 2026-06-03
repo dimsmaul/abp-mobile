@@ -60,6 +60,7 @@ class AvatarBubble extends StatelessWidget {
     if (url == null || url.isEmpty) {
       child = fallback;
     } else {
+      debugPrint('[AvatarBubble] render url=$url');
       child = ClipOval(
         key: ValueKey(url),
         child: Image.network(
@@ -68,12 +69,16 @@ class AvatarBubble extends StatelessWidget {
           height: size,
           fit: BoxFit.cover,
           gaplessPlayback: true,
+          headers: const {'Accept': 'image/*'},
           errorBuilder: (_, error, stack) {
-            debugPrint('[AvatarBubble] failed to load $url -> $error');
+            debugPrint('[AvatarBubble] LOAD FAILED url=$url err=$error');
             return fallback;
           },
           loadingBuilder: (ctx, c, progress) {
-            if (progress == null) return c;
+            if (progress == null) {
+              debugPrint('[AvatarBubble] LOAD OK url=$url');
+              return c;
+            }
             return fallback;
           },
         ),
