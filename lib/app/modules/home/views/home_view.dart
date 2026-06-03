@@ -136,10 +136,13 @@ class HomeView extends GetView<HomeController> {
             border: Border.all(color: AppTheme.cardBorder),
           ),
           child: IconButton(
-            onPressed: controller.refresh,
-            icon: const Icon(Icons.refresh,
-                color: AppTheme.textSecondary, size: 20),
-            tooltip: 'Refresh',
+            onPressed: controller.goToAnnouncements,
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: AppTheme.textSecondary,
+              size: 20,
+            ),
+            tooltip: 'Pengumuman',
           ),
         ),
       ],
@@ -274,11 +277,6 @@ class HomeView extends GetView<HomeController> {
           Row(
             children: [
               Expanded(child: _timeBlock("Check In", controller.checkInTime)),
-              Container(
-                width: 1,
-                height: 44,
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
               Expanded(child: _timeBlock("Check Out", controller.checkOutTime)),
             ],
           ),

@@ -19,17 +19,13 @@ class CameraView extends GetView<CustomCameraController> {
 
           return Stack(
             children: [
-              // Camera preview: use the plugin's natural aspect ratio +
-              // centre the preview. Cover-fill with extra scale was breaking
-              // the GL surface attach on Xiaomi MediaTek, leaving a black
-              // window. Letterboxing is acceptable here — the capture
-              // still uses the full sensor frame.
+              // Camera preview: raw CameraPreview at natural size, centred.
+              // The plugin owns its aspect ratio and surface texture; any
+              // outer Transform/scale wrapper on Xiaomi MediaTek breaks
+              // the GL surface attach and we get a black window.
               Positioned.fill(
                 child: Center(
-                  child: AspectRatio(
-                    aspectRatio: controller.cameraController!.value.aspectRatio,
-                    child: CameraPreview(controller.cameraController!),
-                  ),
+                  child: CameraPreview(controller.cameraController!),
                 ),
               ),
               // Top Bar (Back button)

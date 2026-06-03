@@ -3,6 +3,7 @@ import 'package:get/get.dart' hide Response;
 import 'package:intl/intl.dart';
 import '../../../data/controllers/auth_controller.dart';
 import '../../../data/services/api_service.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
 
 class HomeController extends GetxController {
   final api = Get.find<ApiService>();
@@ -77,7 +78,15 @@ class HomeController extends GetxController {
 
   void goToReports() => Get.toNamed('/reports');
   void goToHistory() => Get.toNamed('/attendance-history');
-  void goToProfile() => Get.toNamed('/profile');
+  void goToProfile() {
+    // If embedded in DashboardView with bottom nav, switch the tab instead
+    // of pushing a new route. Falls back to plain navigation otherwise.
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().changePage(2);
+      return;
+    }
+    Get.toNamed('/profile');
+  }
   void goToPermit() => Get.toNamed('/permit');
   void goToAnnouncements() => Get.toNamed('/announcements');
   void openAnnouncementDetail(String id) =>
