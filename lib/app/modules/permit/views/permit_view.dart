@@ -248,44 +248,75 @@ class _PermitFormSheet extends StatelessWidget {
                 ),
               ),
             ),
-            Text("Request Permit",
+            Text("Ajukan Izin",
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 24),
+
+            const _FieldLabel('Jenis Izin'),
+            const SizedBox(height: 8),
             Obx(() => DropdownButtonFormField<String>(
                   initialValue: controller.type.value,
-                  dropdownColor: AppTheme.cardBg,
+                  dropdownColor: Colors.white,
                   style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: const InputDecoration(labelText: "Permit Type"),
+                  decoration: const InputDecoration(
+                    hintText: 'Pilih jenis',
+                    prefixIcon: Icon(Icons.assignment_outlined, size: 20),
+                  ),
                   items: const [
-                    DropdownMenuItem(value: 'sick', child: Text("Sick Leave")),
+                    DropdownMenuItem(value: 'sick', child: Text('Sakit')),
                     DropdownMenuItem(
-                        value: 'leave', child: Text("Annual Leave")),
+                        value: 'leave', child: Text('Cuti Tahunan')),
                     DropdownMenuItem(
-                        value: 'permit', child: Text("Special Permit")),
+                        value: 'permit', child: Text('Izin Khusus')),
                   ],
-                  onChanged: (val) => controller.type.value = val!,
+                  onChanged: (val) {
+                    if (val != null) controller.type.value = val;
+                  },
                 )),
+
             const SizedBox(height: 16),
+            const _FieldLabel('Deskripsi / Alasan'),
+            const SizedBox(height: 8),
             TextField(
               controller: controller.descriptionController,
               maxLines: 3,
               style: const TextStyle(color: AppTheme.textPrimary),
-              decoration:
-                  const InputDecoration(labelText: "Description / Reason"),
+              decoration: const InputDecoration(
+                hintText: 'Minimal 10 karakter, jelaskan alasan singkat',
+                prefixIcon: Padding(
+                  padding: EdgeInsets.only(bottom: 36),
+                  child: Icon(Icons.notes, size: 20),
+                ),
+              ),
             ),
+
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(child: _buildDatePicker(context, isStart: true)),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(child: _buildDatePicker(context, isStart: false)),
               ],
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: controller.submitPermit,
-              child: const Text("Submit Request"),
-            ),
+
+            const SizedBox(height: 28),
+            Obx(() {
+              final isBusy = controller.isSubmitting.value;
+              return SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: isBusy ? null : controller.submitPermit,
+                  child: isBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Text('Ajukan',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              );
+            }),
             const SizedBox(height: 24),
           ],
         ),
@@ -295,20 +326,52 @@ class _PermitFormSheet extends StatelessWidget {
 
   Widget _buildDatePicker(BuildContext context, {required bool isStart}) {
     return Obx(() {
-      final date = isStart ? controller.startDate.value : controller.endDate.value;
-      return InkWell(
-        onTap: () => isStart
-            ? controller.selectStartDate(context)
-            : controller.selectEndDate(context),
-        child: InputDecorator(
-          decoration:
-              InputDecoration(labelText: isStart ? "Start Date" : "End Date"),
-          child: Text(
-            date != null ? DateFormat('dd/MM/yyyy').format(date) : "Select",
-            style: const TextStyle(color: AppTheme.textPrimary),
+      final date =
+          isStart ? controller.startDate.value : controller.endDate.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _FieldLabel(isStart ? 'Tanggal Mulai' : 'Tanggal Selesai'),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => isStart
+                ? controller.selectStartDate(context)
+                : controller.selectEndDate(context),
+            borderRadius: BorderRadius.circular(12),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.calendar_today_outlined, size: 18),
+                hintText: '—',
+              ),
+              child: Text(
+                date != null ? DateFormat('dd MMM yyyy').format(date) : 'Pilih',
+                style: TextStyle(
+                  color: date != null
+                      ? AppTheme.textPrimary
+                      : AppTheme.textHint,
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       );
     });
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  final String text;
+  const _FieldLabel(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: AppTheme.textSecondary,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.4,
+      ),
+    );
   }
 }
