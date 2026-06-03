@@ -100,13 +100,45 @@ class _SafeNetworkImageState extends State<SafeNetworkImage> {
     ));
     final res = await dio.get<List<int>>(
       url,
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(responseType: ResponseType.bytes, followRedirects: true),
     );
     final bytes = Uint8List.fromList(res.data ?? const []);
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) {
-      throw Exception('Pure-Dart decode returned null');
+    debugPrint(
+        '[SafeNetworkImage] fetched url=$url status=${res.statusCode} bytes=${bytes.length} content-type=${res.headers.value('content-type')}');
+    if (bytes.isEmpty) {
+      throw Exception('Empty response body');
     }
+    debugPrint(
+        '[SafeNetworkImage] magic bytes: ${bytes.take(8).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
+
+    img.Image? decoded;
+    try {
+      decoded = img.decodeImage(bytes);
+    } catch (e) {
+      debugPrint('[SafeNetworkImage] decodeImage threw: $e');
+    }
+    // Auto-detect failed — fall back to format-specific decoders.
+    if (decoded == null) {
+      try {
+        decoded = img.decodePng(bytes);
+        if (decoded != null) {
+          debugPrint('[SafeNetworkImage] fallback decodePng worked');
+        }
+      } catch (_) {}
+    }
+    if (decoded == null) {
+      try {
+        decoded = img.decodeJpg(bytes);
+        if (decoded != null) {
+          debugPrint('[SafeNetworkImage] fallback decodeJpg worked');
+        }
+      } catch (_) {}
+    }
+    if (decoded == null) {
+      throw Exception(
+          'Pure-Dart decode returned null after auto + png + jpg attempts');
+    }
+
     final rgba = decoded.getBytes(order: img.ChannelOrder.rgba);
     final completer = Completer<ui.Image>();
     ui.decodeImageFromPixels(
