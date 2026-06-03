@@ -44,18 +44,6 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- Force Skia (disable Impeller). Required because the camera
-             plugin still uses the legacy SurfaceTexture API on the Android
-             side, and Impeller's Vulkan backend doesn't render those
-             surface textures — symptom is a perfectly black CameraPreview
-             even though the native side reports successful init + active
-             capture session. Flutter logs a deprecation warning for this
-             opt-out but it still functions; we accept the warning until
-             the camera plugin migrates to the new surface producer API. -->
-        <meta-data
-            android:name="io.flutter.embedding.android.EnableImpeller"
-            android:value="false" />
-
         <!-- image_cropper / UCrop activity -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
