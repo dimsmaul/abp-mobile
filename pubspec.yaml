@@ -38,7 +38,11 @@ dependencies:
   dio: ^5.9.2
   shared_preferences: ^2.5.5
   intl: ^0.20.2
-  camera: ^0.12.0+1
+  # Pinned to 0.10.x (camera2 backend). 0.11+ switched the Android side to
+  # camera_android_camerax which renders a black preview on Xiaomi /
+  # MediaTek hardware due to the Pigeon ProxyApi observer GC issue
+  # (missing-instance-error on the surface texture observer).
+  camera: ^0.10.6
   # Slim: only face detection. Umbrella `google_ml_kit` pulled every ML
   # model (digital ink, entity extraction, pose, genai, segmentation, ...)
   # bloating the APK to >100MB and causing native conflicts.
