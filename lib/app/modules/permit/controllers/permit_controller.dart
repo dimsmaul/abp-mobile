@@ -16,10 +16,59 @@ class PermitController extends GetxController {
   final startDate = Rxn<DateTime>();
   final endDate = Rxn<DateTime>();
 
+  // Leave balance snapshot for the current year. Populated best-effort on
+  // init so the UI can show remaining cuti and the form can preflight a
+  // sufficient-balance check before hitting the network.
+  final Rxn<Map> leaveBalance = Rxn<Map>();
+
   @override
   void onInit() {
     super.onInit();
     fetchMyPermits();
+    loadLeaveBalance();
+  }
+
+  Future<void> loadLeaveBalance() async {
+    try {
+      final response = await apiService.fetchMyLeaveBalance();
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        if (data is Map) leaveBalance.value = Map<String, dynamic>.from(data);
+      }
+    } catch (_) {
+      // Swallow: balance is an enhancement, not blocking permit submission.
+    }
+  }
+
+  /// Count working days (Mon-Fri) inclusive between two dates. Mirrors the
+  /// backend formula so the client preflight matches server validation.
+  int countWorkingDays(DateTime start, DateTime end) {
+    final a = DateTime(start.year, start.month, start.day);
+    final b = DateTime(end.year, end.month, end.day);
+    if (b.isBefore(a)) return 0;
+    var count = 0;
+    var cursor = a;
+    while (!cursor.isAfter(b)) {
+      final wd = cursor.weekday; // 1 = Mon, 7 = Sun
+      if (wd != DateTime.saturday && wd != DateTime.sunday) count++;
+      cursor = cursor.add(const Duration(days: 1));
+    }
+    return count;
+  }
+
+  /// Returns an error message if cuti submission would exceed balance,
+  /// or null if it's fine / not applicable.
+  String? validateLeaveBalance() {
+    if (type.value != 'leave') return null;
+    if (startDate.value == null || endDate.value == null) return null;
+    final balance = leaveBalance.value;
+    if (balance == null) return null;
+    final remaining = (balance['remainingDays'] as num?)?.toDouble() ?? 0;
+    final requested = countWorkingDays(startDate.value!, endDate.value!);
+    if (requested > remaining) {
+      return 'Sisa cuti $remaining hari, butuh $requested hari kerja';
+    }
+    return null;
   }
 
   Future<void> fetchMyPermits() async {
@@ -53,6 +102,12 @@ class PermitController extends GetxController {
       return;
     }
 
+    final balanceError = validateLeaveBalance();
+    if (balanceError != null) {
+      Get.snackbar("Saldo cuti tidak cukup", balanceError);
+      return;
+    }
+
     isSubmitting.value = true;
     try {
       final response = await apiService.submitPermit({
@@ -71,6 +126,8 @@ class PermitController extends GetxController {
         endDate.value = null;
         type.value = 'sick';
         fetchMyPermits();
+        // Server may have charged the balance; refresh to reflect new used_days.
+        loadLeaveBalance();
         Get.back();
       }
     } on DioException catch (e) {

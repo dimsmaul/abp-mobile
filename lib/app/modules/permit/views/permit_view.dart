@@ -22,27 +22,34 @@ class PermitView extends GetView<PermitController> {
         if (controller.isLoading.value && controller.permits.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (controller.permits.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.assignment_outlined,
-                    size: 64, color: AppTheme.textHint),
-                const SizedBox(height: 16),
-                Text("No permit requests yet.",
-                    style: TextStyle(color: AppTheme.textHint, fontSize: 16)),
-              ],
-            ),
-          );
-        }
         return RefreshIndicator(
-          onRefresh: controller.fetchMyPermits,
-          child: ListView.builder(
+          onRefresh: () async {
+            await controller.fetchMyPermits();
+            await controller.loadLeaveBalance();
+          },
+          child: ListView(
             padding: const EdgeInsets.all(20),
-            itemCount: controller.permits.length,
-            itemBuilder: (context, index) =>
-                _PermitCard(permit: controller.permits[index]),
+            children: [
+              _LeaveBalanceCard(controller: controller),
+              const SizedBox(height: 16),
+              if (controller.permits.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.assignment_outlined,
+                          size: 64, color: AppTheme.textHint),
+                      const SizedBox(height: 16),
+                      Text("No permit requests yet.",
+                          style: TextStyle(
+                              color: AppTheme.textHint, fontSize: 16)),
+                    ],
+                  ),
+                )
+              else
+                ...controller.permits.map((p) => _PermitCard(permit: p)),
+            ],
           ),
         );
       }),
@@ -58,6 +65,82 @@ class PermitView extends GetView<PermitController> {
       _PermitFormSheet(controller: controller),
       isScrollControlled: true,
     );
+  }
+}
+
+// ── Leave Balance Card ──
+class _LeaveBalanceCard extends StatelessWidget {
+  final PermitController controller;
+  const _LeaveBalanceCard({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final balance = controller.leaveBalance.value;
+      if (balance == null) {
+        return const SizedBox.shrink();
+      }
+      final remaining = (balance['remainingDays'] as num?)?.toDouble() ?? 0;
+      final total = (balance['totalDays'] as num?)?.toDouble() ?? 0;
+      final year = balance['year']?.toString() ?? '';
+
+      // Traffic-light coloring keyed to remaining cuti so the employee gets
+      // a quick at-a-glance signal: > 3 safe, 1-3 caution, 0 blocked.
+      Color color;
+      if (remaining <= 0) {
+        color = Colors.redAccent;
+      } else if (remaining <= 3) {
+        color = Colors.orangeAccent;
+      } else {
+        color = Colors.greenAccent.shade400;
+      }
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.event_available, color: color, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sisa cuti tahun $year',
+                    style: const TextStyle(
+                      color: AppTheme.textHint,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${remaining.toStringAsFixed(remaining.truncateToDouble() == remaining ? 0 : 1)} dari ${total.toStringAsFixed(total.truncateToDouble() == total ? 0 : 1)} hari',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
