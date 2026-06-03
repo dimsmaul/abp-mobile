@@ -1,10 +1,13 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart' as dio_pkg;
+import 'package:flutter/material.dart' show Color;
 import 'package:get/get.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/image_utils.dart';
+import '../../../core/theme.dart';
 import '../../../data/controllers/auth_controller.dart';
 import '../../../data/services/api_service.dart';
 
@@ -49,7 +52,8 @@ class ProfileController extends GetxController {
   Future<void> pickAndUploadProfilePicture() async {
     final result = await Get.toNamed('/camera');
     if (result is String && result.isNotEmpty) {
-      await _uploadPhoto(result);
+      final cropped = await _cropSquare(result);
+      if (cropped != null) await _uploadPhoto(cropped);
     }
   }
 
@@ -64,9 +68,47 @@ class ProfileController extends GetxController {
         imageQuality: 85,
       );
       if (picked == null) return;
-      await _uploadPhoto(picked.path);
+      final cropped = await _cropSquare(picked.path);
+      if (cropped != null) await _uploadPhoto(cropped);
     } catch (e) {
       Get.snackbar('Error', 'Gagal membuka galeri: $e');
+    }
+  }
+
+  /// Open a square 1:1 cropper. Returns the path of the cropped file, or null
+  /// if the user cancelled.
+  Future<String?> _cropSquare(String sourcePath) async {
+    try {
+      final res = await ImageCropper().cropImage(
+        sourcePath: sourcePath,
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 90,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Atur Foto',
+            toolbarColor: AppTheme.primary,
+            toolbarWidgetColor: const Color(0xFFFFFFFF),
+            statusBarColor: AppTheme.primaryDark,
+            activeControlsWidgetColor: AppTheme.primary,
+            backgroundColor: const Color(0xFF000000),
+            lockAspectRatio: true,
+            aspectRatioPresets: [CropAspectRatioPreset.square],
+            initAspectRatio: CropAspectRatioPreset.square,
+            hideBottomControls: true,
+          ),
+          IOSUiSettings(
+            title: 'Atur Foto',
+            aspectRatioLockEnabled: true,
+            aspectRatioPickerButtonHidden: true,
+            resetAspectRatioEnabled: false,
+            aspectRatioPresets: [CropAspectRatioPreset.square],
+          ),
+        ],
+      );
+      return res?.path;
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal memproses foto: $e');
+      return null;
     }
   }
 

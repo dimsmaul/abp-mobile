@@ -338,25 +338,27 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildQuickActions(TextTheme textTheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
-          ),
+        _action(
+          icon: Icons.assignment_outlined,
+          label: 'Laporan',
+          tint: AppTheme.primary,
+          onTap: controller.goToReports,
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _action(icon: Icons.assignment_outlined, onTap: controller.goToReports),
-            _action(icon: Icons.history, onTap: controller.goToHistory),
-            _action(
-                icon: Icons.event_note_outlined, onTap: controller.goToPermit),
-          ],
+        const SizedBox(width: 12),
+        _action(
+          icon: Icons.history_rounded,
+          label: 'Riwayat',
+          tint: AppTheme.success,
+          onTap: controller.goToHistory,
+        ),
+        const SizedBox(width: 12),
+        _action(
+          icon: Icons.event_note_outlined,
+          label: 'Pengajuan',
+          tint: AppTheme.warning,
+          onTap: controller.goToPermit,
         ),
       ],
     );
@@ -364,25 +366,45 @@ class HomeView extends GetView<HomeController> {
 
   Widget _action({
     required IconData icon,
+    required String label,
+    required Color tint,
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.only(right: 12),
-        child: Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 22),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.cardBorder),
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, color: AppTheme.primary, size: 26),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.cardBorder),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: tint.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: tint, size: 22),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

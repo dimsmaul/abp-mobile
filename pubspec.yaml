@@ -52,6 +52,7 @@ dependencies:
   # Avatar-only gallery picker. Attendance + reports still camera-only
   # (M-03 anti-spoof: selfie cannot come from gallery).
   image_picker: ^1.1.2
+  image_cropper: ^9.1.0
 
 dev_dependencies:
   flutter_test:
