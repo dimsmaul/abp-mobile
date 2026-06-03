@@ -16,11 +16,13 @@ class ApiService extends GetxService {
     super.onInit();
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
+      connectTimeout: const Duration(seconds: 15),
+      // Multipart uploads (avatar / report photo) need a generous receive
+      // window on mobile networks. R2 PUT round-trips can take 20-30s on 3G.
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 60),
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
       },
     ));
 
@@ -32,18 +34,44 @@ class ApiService extends GetxService {
           options.headers['Cookie'] =
               'better-auth.session_token=$token; __Secure-better-auth.session_token=$token';
         }
+        // Don't override multipart Content-Type set by Dio
+        if (options.data is! FormData) {
+          options.headers['Content-Type'] = 'application/json';
+        }
         return handler.next(options);
       },
       onError: (DioException e, handler) {
         if (e.response?.statusCode == 401) {
-          clearAuthData();
-          if (Get.currentRoute != '/login' && Get.currentRoute != '/splash') {
-            Get.offAllNamed('/login');
-          }
+          _handleSessionExpired();
         }
         return handler.next(e);
       },
     ));
+  }
+
+  /// Centralized expired-session handler. Called from the 401 interceptor.
+  /// Wipes local auth and bounces the user to /login, skipping if already
+  /// on a public route or mid-bootstrap.
+  void _handleSessionExpired() {
+    clearAuthData();
+    final route = Get.currentRoute;
+    const publicRoutes = {
+      '/login',
+      '/register',
+      '/splash',
+      '/forget-password',
+    };
+    if (!publicRoutes.contains(route)) {
+      Get.offAllNamed('/login');
+      // Defer the snackbar so it shows after the navigation animation.
+      Future.delayed(const Duration(milliseconds: 250), () {
+        Get.snackbar(
+          'Sesi Berakhir',
+          'Silakan masuk kembali untuk melanjutkan.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      });
+    }
   }
 
   // ── Auth ─────────────────────────────────────────
@@ -172,13 +200,32 @@ class ApiService extends GetxService {
 }
 
 /// Safely extract error message from a DioException response of any shape.
+/// Falls back to a network-friendly note for timeouts / no-connection so
+/// users get something more useful than the raw RequestOptions exception.
 String dioErrorMessage(DioException e, [String fallback = 'Request failed']) {
+  // Network-level errors first — these don't have e.response.
+  switch (e.type) {
+    case DioExceptionType.connectionTimeout:
+    case DioExceptionType.sendTimeout:
+    case DioExceptionType.receiveTimeout:
+      return 'Koneksi timeout. Cek jaringan dan coba lagi.';
+    case DioExceptionType.connectionError:
+      return 'Tidak bisa terhubung ke server. Cek koneksi internet Anda.';
+    default:
+      break;
+  }
+
   final data = e.response?.data;
   if (data is Map) {
     final m = data['message'];
     if (m is String && m.isNotEmpty) return m;
     final err = data['error'];
-    if (err is Map && err['message'] is String) return err['message'] as String;
+    if (err is Map) {
+      final em = err['message'];
+      if (em is String && em.isNotEmpty) return em;
+      final ec = err['code'];
+      if (ec is String && ec.isNotEmpty) return ec;
+    }
   }
   if (data is String && data.isNotEmpty) return data;
   return e.message ?? fallback;

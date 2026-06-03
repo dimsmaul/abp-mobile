@@ -74,7 +74,9 @@ class AttendanceController extends GetxController {
 
     isLoading.value = true;
     try {
-      final sanitized = await stripExif(File(image.value!.path));
+      // Selfie: 1280px max, JPEG q80 — still readable for watermark + face.
+      final sanitized = await stripExif(File(image.value!.path),
+          maxDimension: 1280, quality: 80);
       String fileName = sanitized.path.split('/').last;
       dio_pkg.FormData formData = dio_pkg.FormData.fromMap({
         "photo": await dio_pkg.MultipartFile.fromFile(sanitized.path,

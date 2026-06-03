@@ -113,7 +113,9 @@ class ReportsController extends GetxController {
 
     isSubmitting.value = true;
     try {
-      final sanitized = await stripExif(File(image.value!.path));
+      // Report photo: 1600px max so field details remain legible.
+      final sanitized = await stripExif(File(image.value!.path),
+          maxDimension: 1600, quality: 80);
       final fileName = sanitized.path.split('/').last;
       final form = dio_pkg.FormData.fromMap({
         "photo": await dio_pkg.MultipartFile.fromFile(sanitized.path,

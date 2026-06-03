@@ -75,7 +75,9 @@ class ProfileController extends GetxController {
     try {
       File file = File(imagePath);
       try {
-        file = await stripExif(file);
+        // Avatar: cap at 1080px longest side, JPEG q80 → typically <300KB.
+        // Keeps BE 5MB limit comfortable and avoids upload timeouts on 3G.
+        file = await stripExif(file, maxDimension: 1080, quality: 80);
       } catch (_) {
         // EXIF strip best-effort; keep original on failure.
       }
