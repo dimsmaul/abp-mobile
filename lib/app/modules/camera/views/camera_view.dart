@@ -19,20 +19,31 @@ class CameraView extends GetView<CustomCameraController> {
 
           return Stack(
             children: [
-              // Full screen camera preview with proper aspect ratio scaling
+              // Full screen camera preview. Let the plugin own the aspect
+              // ratio via `CameraController.value.aspectRatio`; manually
+              // swapping width/height like before caused a 1x1 layout when
+              // previewSize was momentarily null on some Android devices,
+              // showing as a black screen even though the sensor was open.
               Positioned.fill(
-                child: ClipRect(
-                  child: OverflowBox(
-                    alignment: Alignment.center,
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: controller.cameraController!.value.previewSize?.height ?? 1,
-                        height: controller.cameraController!.value.previewSize?.width ?? 1,
-                        child: CameraPreview(controller.cameraController!),
+                child: LayoutBuilder(
+                  builder: (ctx, constraints) {
+                    final cam = controller.cameraController!;
+                    final cameraAspect = cam.value.aspectRatio;
+                    final screenAspect =
+                        constraints.maxWidth / constraints.maxHeight;
+                    // Cover behaviour: scale up the dimension that's smaller
+                    // relative to the screen so the preview fills the frame
+                    // without letterboxing.
+                    final scale = cameraAspect > screenAspect
+                        ? cameraAspect / screenAspect
+                        : screenAspect / cameraAspect;
+                    return ClipRect(
+                      child: Transform.scale(
+                        scale: scale,
+                        child: Center(child: CameraPreview(cam)),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               // Top Bar (Back button)

@@ -276,6 +276,17 @@ class _Header extends StatelessWidget {
             ),
             const Divider(height: 1, color: AppTheme.cardBorder),
             ListTile(
+              leading: const Icon(Icons.photo_library_outlined,
+                  color: AppTheme.primary),
+              title: const Text('Pilih dari Galeri'),
+              subtitle: const Text('Pilih foto dari penyimpanan'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                controller.pickFromGalleryAndUpload();
+              },
+            ),
+            const Divider(height: 1, color: AppTheme.cardBorder),
+            ListTile(
               leading: const Icon(Icons.close, color: AppTheme.textHint),
               title: const Text('Batal'),
               onTap: () => Navigator.of(ctx).pop(),

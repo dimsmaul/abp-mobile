@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/image_utils.dart';
 import '../../../data/controllers/auth_controller.dart';
@@ -49,6 +50,23 @@ class ProfileController extends GetxController {
     final result = await Get.toNamed('/camera');
     if (result is String && result.isNotEmpty) {
       await _uploadPhoto(result);
+    }
+  }
+
+  // ── Avatar via gallery ────────────────────────────
+  // Profile avatar only — attendance + reports stay camera-only (M-03).
+  Future<void> pickFromGalleryAndUpload() async {
+    final picker = ImagePicker();
+    try {
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      await _uploadPhoto(picked.path);
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal membuka galeri: $e');
     }
   }
 
