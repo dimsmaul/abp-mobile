@@ -25,12 +25,23 @@ class CameraView extends GetView<CustomCameraController> {
 
           return Stack(
             children: [
-              // Raw CameraPreview centred. The plugin owns the texture +
-              // aspect ratio; any outer Transform wrapper trips MIUI's
-              // GL surface attach and yields a black window.
+              // Pattern from the camera package docs: give the Texture an
+              // explicit width/height (sensor preview size, swapped for
+              // portrait so the rotated frame still maps 1:1), then let
+              // FittedBox cover the screen. Plain Center collapses the
+              // Texture to 0x0 because CameraPreview has no intrinsic size.
               Positioned.fill(
-                child: Center(
-                  child: CameraPreview(controller.cameraController!),
+                child: SizedBox.expand(
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width:
+                          controller.cameraController!.value.previewSize?.height ?? 480,
+                      height:
+                          controller.cameraController!.value.previewSize?.width ?? 720,
+                      child: CameraPreview(controller.cameraController!),
+                    ),
+                  ),
                 ),
               ),
 
