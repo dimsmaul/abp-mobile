@@ -19,31 +19,17 @@ class CameraView extends GetView<CustomCameraController> {
 
           return Stack(
             children: [
-              // Full screen camera preview. Let the plugin own the aspect
-              // ratio via `CameraController.value.aspectRatio`; manually
-              // swapping width/height like before caused a 1x1 layout when
-              // previewSize was momentarily null on some Android devices,
-              // showing as a black screen even though the sensor was open.
+              // Camera preview: use the plugin's natural aspect ratio +
+              // centre the preview. Cover-fill with extra scale was breaking
+              // the GL surface attach on Xiaomi MediaTek, leaving a black
+              // window. Letterboxing is acceptable here — the capture
+              // still uses the full sensor frame.
               Positioned.fill(
-                child: LayoutBuilder(
-                  builder: (ctx, constraints) {
-                    final cam = controller.cameraController!;
-                    final cameraAspect = cam.value.aspectRatio;
-                    final screenAspect =
-                        constraints.maxWidth / constraints.maxHeight;
-                    // Cover behaviour: scale up the dimension that's smaller
-                    // relative to the screen so the preview fills the frame
-                    // without letterboxing.
-                    final scale = cameraAspect > screenAspect
-                        ? cameraAspect / screenAspect
-                        : screenAspect / cameraAspect;
-                    return ClipRect(
-                      child: Transform.scale(
-                        scale: scale,
-                        child: Center(child: CameraPreview(cam)),
-                      ),
-                    );
-                  },
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: controller.cameraController!.value.aspectRatio,
+                    child: CameraPreview(controller.cameraController!),
+                  ),
                 ),
               ),
               // Top Bar (Back button)

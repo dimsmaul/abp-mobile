@@ -1,4 +1,5 @@
 import 'package:camera/camera.dart';
+import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:get/get.dart';
 import '../../../../main.dart';
 import '../../../core/face_utils.dart';
@@ -41,20 +42,37 @@ class CustomCameraController extends GetxController {
     }
     selectedCamera ??= cameras.first;
 
-    cameraController = CameraController(
-      selectedCamera,
+    // Try presets from high → medium → low. Some Android (notably Xiaomi
+    // MediaTek) reports init success but renders a black preview at certain
+    // resolutions; falling back picks a preset the GPU can actually display.
+    const candidates = [
+      ResolutionPreset.high,
       ResolutionPreset.medium,
-      enableAudio: false,
-    );
+      ResolutionPreset.low,
+    ];
 
-    try {
-      await cameraController!.initialize();
-      isInitialized.value = true;
-    } catch (e) {
-      Future.delayed(Duration.zero, () {
-        Get.snackbar('Camera Error', 'Could not initialize camera: $e');
-      });
+    for (final preset in candidates) {
+      final ctrl = CameraController(
+        selectedCamera,
+        preset,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.yuv420,
+      );
+      try {
+        await ctrl.initialize();
+        // Lock orientation so preview matches device rotation deterministically.
+        await ctrl.lockCaptureOrientation(DeviceOrientation.portraitUp);
+        cameraController = ctrl;
+        isInitialized.value = true;
+        return;
+      } catch (_) {
+        await ctrl.dispose();
+      }
     }
+
+    Future.delayed(Duration.zero, () {
+      Get.snackbar('Camera Error', 'Could not initialize camera at any preset');
+    });
   }
 
   Future<void> takePicture() async {
