@@ -44,6 +44,14 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- Impeller (Vulkan) on some Android devices (notably Xiaomi /
+             MediaTek combos) fails to decode certain JPEGs with
+             ImageDecoder$DecodeException: 'unimplemented'. Fall back to
+             Skia so Image.network always decodes reliably. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
         <!-- image_cropper / UCrop activity -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"
