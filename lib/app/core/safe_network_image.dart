@@ -1,30 +1,13 @@
-import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
-import 'package:image/image.dart' as img;
 
-/// Network image widget that fully bypasses Android's native ImageDecoder.
-///
-/// Why: Android's ImageDecoder on certain Xiaomi / MediaTek hardware throws
-/// `Failed to create image decoder with message 'unimplemented'` on JPEGs
-/// that every other decoder (browsers, Skia desktop, Chrome on the same
-/// device) handles fine. Flutter's `Image.network` and `CachedNetworkImage`
-/// both ultimately route bytes through that broken native decoder.
-///
-/// This widget instead:
-///   1. Fetches bytes with Dio
-///   2. Decodes them in pure Dart via the `image` package
-///   3. Lifts the resulting RGBA pixels into a `ui.Image` via
-///      `decodeImageFromPixels` (a path that does NOT touch the JPEG/PNG
-///      native decoder)
-///   4. Renders with `RawImage`
-///
-/// Decoded `ui.Image` instances are cached per URL across widget mounts so
-/// subsequent renders are immediate.
+/// Fetch image bytes ourselves (with a browser UA so Cloudflare WAF serves
+/// the actual asset instead of an HTML interstitial), then hand the bytes
+/// to `Image.memory`. Keeps a per-URL byte cache so subsequent renders skip
+/// the network.
 class SafeNetworkImage extends StatefulWidget {
   final String url;
   final double width;
@@ -48,54 +31,55 @@ class SafeNetworkImage extends StatefulWidget {
 }
 
 class _SafeNetworkImageState extends State<SafeNetworkImage> {
-  static final Map<String, ui.Image> _cache = {};
-  static final Map<String, Future<ui.Image>> _inflight = {};
-
-  ui.Image? _image;
-  Object? _error;
+  static final Map<String, Uint8List> _cache = {};
+  static final Map<String, Future<Uint8List>> _inflight = {};
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _bytesFor(widget.url),
+      builder: (ctx, snapshot) {
+        if (snapshot.hasError) {
+          debugPrint('[SafeNetworkImage] fetch error url=${widget.url} err=${snapshot.error}');
+          return widget.errorBuilder?.call(ctx, snapshot.error!) ??
+              const SizedBox.shrink();
+        }
+        final bytes = snapshot.data;
+        if (bytes == null) {
+          return widget.placeholder?.call(ctx) ?? const SizedBox.shrink();
+        }
+        return Image.memory(
+          bytes,
+          width: widget.width,
+          height: widget.height,
+          fit: widget.fit,
+          gaplessPlayback: true,
+          errorBuilder: (c, e, _) {
+            debugPrint('[SafeNetworkImage] Image.memory decode error url=${widget.url} err=$e');
+            return widget.errorBuilder?.call(c, e) ?? const SizedBox.shrink();
+          },
+        );
+      },
+    );
   }
 
-  @override
-  void didUpdateWidget(covariant SafeNetworkImage old) {
-    super.didUpdateWidget(old);
-    if (old.url != widget.url) {
-      _image = null;
-      _error = null;
-      _load();
-    }
-  }
-
-  Future<void> _load() async {
-    final url = widget.url;
-
+  Future<Uint8List> _bytesFor(String url) {
     final cached = _cache[url];
-    if (cached != null) {
-      if (mounted) setState(() => _image = cached);
-      return;
-    }
-
-    try {
-      final future = _inflight.putIfAbsent(url, () => _fetchAndDecode(url));
-      final decoded = await future;
-      _inflight.remove(url);
-      if (!mounted) return;
-      setState(() => _image = decoded);
-    } catch (e) {
-      _inflight.remove(url);
-      debugPrint('[SafeNetworkImage] decode failed url=$url err=$e');
-      if (!mounted) return;
-      setState(() => _error = e);
-    }
+    if (cached != null) return Future.value(cached);
+    return _inflight.putIfAbsent(url, () async {
+      try {
+        final bytes = await _fetch(url);
+        _cache[url] = bytes;
+        return bytes;
+      } finally {
+        _inflight.remove(url);
+      }
+    });
   }
 
-  static Future<ui.Image> _fetchAndDecode(String url) async {
-    // Cache-buster prevents any edge from serving the HTML interstitial it
-    // may have cached from an earlier bot-flagged request.
+  static Future<Uint8List> _fetch(String url) async {
+    // Cache-buster prevents an edge from serving a previously-cached HTML
+    // interstitial for this URL.
     final fetchUrl =
         '$url${url.contains('?') ? '&' : '?'}t=${DateTime.now().millisecondsSinceEpoch}';
     final dio = Dio(BaseOptions(
@@ -108,9 +92,8 @@ class _SafeNetworkImageState extends State<SafeNetworkImage> {
         responseType: ResponseType.bytes,
         followRedirects: true,
         headers: {
-          // Cloudflare's default WAF served an HTML interstitial when Dio
-          // sent its default User-Agent (Dio/x.y.z). A real Chrome UA
-          // gets through to the actual object.
+          // Cloudflare WAF blocks the default Dio UA and serves a 5KB
+          // HTML interstitial. A real Chrome Mobile UA passes through.
           'User-Agent':
               'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
           'Accept':
@@ -118,73 +101,16 @@ class _SafeNetworkImageState extends State<SafeNetworkImage> {
         },
       ),
     );
-    debugPrint(
-        '[SafeNetworkImage] sent UA=${res.requestOptions.headers['User-Agent']}');
     final bytes = Uint8List.fromList(res.data ?? const []);
+    final ct = res.headers.value('content-type') ?? '';
     debugPrint(
-        '[SafeNetworkImage] fetched url=$url status=${res.statusCode} bytes=${bytes.length} content-type=${res.headers.value('content-type')}');
+        '[SafeNetworkImage] fetched bytes=${bytes.length} ct=$ct url=$url');
     if (bytes.isEmpty) {
       throw Exception('Empty response body');
     }
-    debugPrint(
-        '[SafeNetworkImage] magic bytes: ${bytes.take(8).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}');
-
-    img.Image? decoded;
-    try {
-      decoded = img.decodeImage(bytes);
-    } catch (e) {
-      debugPrint('[SafeNetworkImage] decodeImage threw: $e');
+    if (!ct.startsWith('image/')) {
+      throw Exception('Unexpected content-type: $ct');
     }
-    // Auto-detect failed — fall back to format-specific decoders.
-    if (decoded == null) {
-      try {
-        decoded = img.decodePng(bytes);
-        if (decoded != null) {
-          debugPrint('[SafeNetworkImage] fallback decodePng worked');
-        }
-      } catch (_) {}
-    }
-    if (decoded == null) {
-      try {
-        decoded = img.decodeJpg(bytes);
-        if (decoded != null) {
-          debugPrint('[SafeNetworkImage] fallback decodeJpg worked');
-        }
-      } catch (_) {}
-    }
-    if (decoded == null) {
-      throw Exception(
-          'Pure-Dart decode returned null after auto + png + jpg attempts');
-    }
-
-    final rgba = decoded.getBytes(order: img.ChannelOrder.rgba);
-    final completer = Completer<ui.Image>();
-    ui.decodeImageFromPixels(
-      Uint8List.fromList(rgba),
-      decoded.width,
-      decoded.height,
-      ui.PixelFormat.rgba8888,
-      completer.complete,
-    );
-    final uiImage = await completer.future;
-    _cache[url] = uiImage;
-    return uiImage;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_error != null) {
-      return widget.errorBuilder?.call(context, _error!) ??
-          const SizedBox.shrink();
-    }
-    if (_image == null) {
-      return widget.placeholder?.call(context) ?? const SizedBox.shrink();
-    }
-    return RawImage(
-      image: _image,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
-    );
+    return bytes;
   }
 }
