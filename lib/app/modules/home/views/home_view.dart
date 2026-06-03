@@ -230,18 +230,15 @@ class HomeView extends GetView<HomeController> {
           children: [
             _action(
               icon: Icons.assignment_outlined,
-              label: "Reports",
               onTap: controller.goToReports,
             ),
             _action(
               icon: Icons.history,
-              label: "History",
               onTap: controller.goToHistory,
             ),
             _action(
-              icon: Icons.person_outline,
-              label: "Profile",
-              onTap: controller.goToProfile,
+              icon: Icons.event_note_outlined,
+              onTap: controller.goToPermit,
             ),
           ],
         ),
@@ -251,7 +248,6 @@ class HomeView extends GetView<HomeController> {
 
   Widget _action({
     required IconData icon,
-    required String label,
     required VoidCallback onTap,
   }) {
     return Expanded(
@@ -259,25 +255,14 @@ class HomeView extends GetView<HomeController> {
         onTap: onTap,
         child: Container(
           margin: const EdgeInsets.only(right: 12),
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppTheme.cardBorder),
           ),
-          child: Column(
-            children: [
-              Icon(icon, color: AppTheme.primary, size: 24),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+          alignment: Alignment.center,
+          child: Icon(icon, color: AppTheme.primary, size: 26),
         ),
       ),
     );
