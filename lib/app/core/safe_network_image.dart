@@ -97,6 +97,15 @@ class _SafeNetworkImageState extends State<SafeNetworkImage> {
     final dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
+      headers: {
+        // Cloudflare's default WAF served an HTML interstitial when Dio
+        // sent its default User-Agent (Dio/x.y.z). A browser-like UA
+        // makes the request indistinguishable from a Chrome page load
+        // and gets through to the actual object.
+        'User-Agent':
+            'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/png,image/jpeg,image/*,*/*;q=0.8',
+      },
     ));
     final res = await dio.get<List<int>>(
       url,
