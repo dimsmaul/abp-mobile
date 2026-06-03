@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'theme.dart';
 
@@ -60,15 +61,17 @@ class AvatarBubble extends StatelessWidget {
       child = fallback;
     } else {
       child = ClipOval(
+        key: ValueKey(url),
         child: Image.network(
           url,
           width: size,
           height: size,
           fit: BoxFit.cover,
-          // Cache key: explicit URL so when the same widget rebuilds with
-          // a different URL Flutter actually re-fetches.
           gaplessPlayback: true,
-          errorBuilder: (_, __, ___) => fallback,
+          errorBuilder: (_, error, stack) {
+            debugPrint('[AvatarBubble] failed to load $url -> $error');
+            return fallback;
+          },
           loadingBuilder: (ctx, c, progress) {
             if (progress == null) return c;
             return fallback;

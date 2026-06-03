@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart' as dio_pkg;
-import 'package:flutter/material.dart' show Color;
+import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/material.dart' show Color, NetworkImage, PaintingBinding;
 import 'package:get/get.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -142,6 +143,9 @@ class ProfileController extends GetxController {
           imageUrl = root['imageUrl'] as String;
         }
         if (imageUrl != null && imageUrl.isNotEmpty) {
+          debugPrint('[profile] avatar uploaded: $imageUrl');
+          // Evict any cached failure for this URL so Image.network re-fetches.
+          PaintingBinding.instance.imageCache.evict(NetworkImage(imageUrl));
           _mergeUserUpdate({'image': imageUrl});
         }
         Get.snackbar('Success', 'Foto profil diperbarui');
