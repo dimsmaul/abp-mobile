@@ -148,6 +148,10 @@ class ApiService extends GetxService {
   Future<Response> submitPermit(Map<String, dynamic> body) =>
       _dio.post('/permits', data: body);
 
+  // ── Leave Balance ────────────────────────────────
+  Future<Response> fetchMyLeaveBalance() =>
+      _dio.get('/mobile/me/leave-balance');
+
   // ── Profile ──────────────────────────────────────
   Future<Response> updateProfile({String? name, String? department}) {
     final body = <String, dynamic>{};
