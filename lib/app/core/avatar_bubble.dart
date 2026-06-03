@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
+import 'safe_network_image.dart';
 import 'theme.dart';
 
 /// Renders a circular avatar that gracefully degrades:
@@ -64,26 +64,15 @@ class AvatarBubble extends StatelessWidget {
       debugPrint('[AvatarBubble] render url=$url');
       child = ClipOval(
         key: ValueKey(url),
-        child: CachedNetworkImage(
-          imageUrl: url,
+        child: SafeNetworkImage(
+          url: url,
           width: size,
           height: size,
           fit: BoxFit.cover,
-          fadeInDuration: const Duration(milliseconds: 200),
-          httpHeaders: const {'Accept': 'image/*'},
-          placeholder: (_, __) => fallback,
-          errorWidget: (_, u, error) {
-            debugPrint('[AvatarBubble] LOAD FAILED url=$u err=$error');
+          placeholder: (_) => fallback,
+          errorBuilder: (_, error) {
+            debugPrint('[AvatarBubble] LOAD FAILED url=$url err=$error');
             return fallback;
-          },
-          imageBuilder: (ctx, imageProvider) {
-            debugPrint('[AvatarBubble] LOAD OK url=$url');
-            return Image(
-              image: imageProvider,
-              width: size,
-              height: size,
-              fit: BoxFit.cover,
-            );
           },
         ),
       );
