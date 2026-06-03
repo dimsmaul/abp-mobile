@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'theme.dart';
@@ -63,23 +64,26 @@ class AvatarBubble extends StatelessWidget {
       debugPrint('[AvatarBubble] render url=$url');
       child = ClipOval(
         key: ValueKey(url),
-        child: Image.network(
-          url,
+        child: CachedNetworkImage(
+          imageUrl: url,
           width: size,
           height: size,
           fit: BoxFit.cover,
-          gaplessPlayback: true,
-          headers: const {'Accept': 'image/*'},
-          errorBuilder: (_, error, stack) {
-            debugPrint('[AvatarBubble] LOAD FAILED url=$url err=$error');
+          fadeInDuration: const Duration(milliseconds: 200),
+          httpHeaders: const {'Accept': 'image/*'},
+          placeholder: (_, __) => fallback,
+          errorWidget: (_, u, error) {
+            debugPrint('[AvatarBubble] LOAD FAILED url=$u err=$error');
             return fallback;
           },
-          loadingBuilder: (ctx, c, progress) {
-            if (progress == null) {
-              debugPrint('[AvatarBubble] LOAD OK url=$url');
-              return c;
-            }
-            return fallback;
+          imageBuilder: (ctx, imageProvider) {
+            debugPrint('[AvatarBubble] LOAD OK url=$url');
+            return Image(
+              image: imageProvider,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+            );
           },
         ),
       );
