@@ -3,6 +3,9 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
+import 'package:get/get.dart' hide Response;
+
+import '../data/services/api_service.dart';
 
 /// Fetch image bytes ourselves (with a browser UA so Cloudflare WAF serves
 /// the actual asset instead of an HTML interstitial), then hand the bytes
@@ -78,8 +81,42 @@ class _SafeNetworkImageState extends State<SafeNetworkImage> {
   }
 
   static Future<Uint8List> _fetch(String url) async {
-    // Cache-buster prevents an edge from serving a previously-cached HTML
-    // interstitial for this URL.
+    // Cloudflare's WAF gates the public r2.dev subdomain on TLS / JA3
+    // fingerprint and serves a 5KB HTML interstitial to Dart's HttpClient
+    // regardless of User-Agent. Route the fetch through our own BE
+    // (`GET /api/mobile/me/avatar`) which already speaks S3 to R2 and
+    // streams the bytes back to us over the authenticated session.
+    //
+    // For non-avatar images (anything that's not the current user's own
+    // avatar URL), we still try the direct fetch — those use cases (report
+    // photos, etc.) may need a different proxy later but aren't broken
+    // today.
+    final api = Get.find<ApiService>();
+    final currentImage =
+        api.currentUser?['image']?.toString();
+    if (currentImage != null && currentImage == url) {
+      final res = await api.dio.get<List<int>>(
+        '/mobile/me/avatar',
+        options: Options(
+          responseType: ResponseType.bytes,
+          // Bypass our axios-style JSON content-type interceptor.
+          headers: {'Accept': 'image/*'},
+        ),
+        queryParameters: {
+          't': DateTime.now().millisecondsSinceEpoch,
+        },
+      );
+      final bytes = Uint8List.fromList(res.data ?? const []);
+      final ct = res.headers.value('content-type') ?? '';
+      debugPrint(
+          '[SafeNetworkImage] proxy fetched bytes=${bytes.length} ct=$ct');
+      if (bytes.isEmpty) {
+        throw Exception('Empty proxy response');
+      }
+      return bytes;
+    }
+
+    // Fallback: direct r2.dev hit with cache buster + browser UA.
     final fetchUrl =
         '$url${url.contains('?') ? '&' : '?'}t=${DateTime.now().millisecondsSinceEpoch}';
     final dio = Dio(BaseOptions(
@@ -92,8 +129,6 @@ class _SafeNetworkImageState extends State<SafeNetworkImage> {
         responseType: ResponseType.bytes,
         followRedirects: true,
         headers: {
-          // Cloudflare WAF blocks the default Dio UA and serves a 5KB
-          // HTML interstitial. A real Chrome Mobile UA passes through.
           'User-Agent':
               'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
           'Accept':
@@ -104,7 +139,7 @@ class _SafeNetworkImageState extends State<SafeNetworkImage> {
     final bytes = Uint8List.fromList(res.data ?? const []);
     final ct = res.headers.value('content-type') ?? '';
     debugPrint(
-        '[SafeNetworkImage] fetched bytes=${bytes.length} ct=$ct url=$url');
+        '[SafeNetworkImage] direct fetched bytes=${bytes.length} ct=$ct url=$url');
     if (bytes.isEmpty) {
       throw Exception('Empty response body');
     }
