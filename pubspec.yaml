@@ -53,6 +53,7 @@ dependencies:
   # (M-03 anti-spoof: selfie cannot come from gallery).
   image_picker: ^1.1.2
   image_cropper: ^9.1.0
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
