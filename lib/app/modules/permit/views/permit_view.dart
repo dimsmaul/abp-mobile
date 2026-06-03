@@ -11,52 +11,73 @@ class PermitView extends GetView<PermitController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text("My Permits"),
+        title: const Text('Pengajuan Saya'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value && controller.permits.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        return RefreshIndicator(
-          onRefresh: () async {
-            await controller.fetchMyPermits();
-            await controller.loadLeaveBalance();
-          },
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              _LeaveBalanceCard(controller: controller),
-              const SizedBox(height: 16),
-              if (controller.permits.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.assignment_outlined,
-                          size: 64, color: AppTheme.textHint),
-                      const SizedBox(height: 16),
-                      Text("No permit requests yet.",
-                          style: TextStyle(
-                              color: AppTheme.textHint, fontSize: 16)),
-                    ],
-                  ),
-                )
-              else
-                ...controller.permits.map((p) => _PermitCard(permit: p)),
-            ],
-          ),
-        );
-      }),
+      body: SafeArea(
+        child: Obx(() {
+          final isInitialLoading =
+              controller.isLoading.value && controller.permits.isEmpty;
+          return RefreshIndicator(
+            onRefresh: () async {
+              await controller.fetchMyPermits();
+              await controller.loadLeaveBalance();
+            },
+            color: AppTheme.primary,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
+              children: [
+                _LeaveBalanceCard(controller: controller),
+                Obx(() => controller.leaveBalance.value == null
+                    ? const SizedBox.shrink()
+                    : const SizedBox(height: 20)),
+                _header(),
+                const SizedBox(height: 12),
+                if (isInitialLoading)
+                  ...List.generate(3, (_) => const _Skeleton())
+                else if (controller.permits.isEmpty)
+                  const _Empty()
+                else
+                  ...controller.permits.map((p) => _PermitCard(permit: p)),
+              ],
+            ),
+          );
+        }),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddPermitSheet(context),
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Widget _header() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: const [
+        Text(
+          'Pengajuan Saya',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          'Cuti, sakit, izin, dinas',
+          style: TextStyle(
+            color: AppTheme.textSecondary,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 
@@ -153,67 +174,259 @@ class _PermitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusStr = permit['status']?.toString() ?? 'pending';
     final typeStr = permit['type']?.toString() ?? '';
+    final desc = permit['description']?.toString() ?? '';
+    final attachmentUrl = permit['attachmentUrl']?.toString();
+
+    final startDate = DateTime.tryParse(permit['startDate']?.toString() ?? '');
+    final endDate = DateTime.tryParse(permit['endDate']?.toString() ?? '');
+    final rangeStr = (startDate != null && endDate != null)
+        ? '${DateFormat('dd MMM').format(startDate)} – ${DateFormat('dd MMM yyyy').format(endDate)}'
+        : '-';
+
+    final typeIcon = _typeIcon(typeStr);
+    final typeColor = _typeColor(typeStr);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: typeColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(typeIcon, color: typeColor, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        permitTypeLabel(typeStr),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today_outlined,
+                              size: 12, color: AppTheme.textHint),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              rangeStr,
+                              style: const TextStyle(
+                                color: AppTheme.textHint,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _statusBadge(statusStr),
+              ],
+            ),
+            if (desc.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                desc,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
+            ],
+            if (attachmentUrl != null && attachmentUrl.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: const [
+                  Icon(Icons.attach_file,
+                      size: 12, color: AppTheme.textHint),
+                  SizedBox(width: 4),
+                  Text(
+                    'Lampiran terlampir',
+                    style: TextStyle(
+                      color: AppTheme.textHint,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _typeIcon(String type) {
+    switch (type) {
+      case 'sick':
+        return Icons.favorite_outline;
+      case 'leave':
+        return Icons.beach_access_outlined;
+      case 'permit':
+        return Icons.event_note_outlined;
+      default:
+        return Icons.assignment_outlined;
+    }
+  }
+
+  Color _typeColor(String type) {
+    switch (type) {
+      case 'sick':
+        return AppTheme.danger;
+      case 'leave':
+        return AppTheme.primary;
+      case 'permit':
+        return AppTheme.warning;
+      default:
+        return AppTheme.textHint;
+    }
+  }
+
+  Widget _statusBadge(String status) {
+    final color = permitStatusColor(status);
+    final label = permitStatusLabel(status);
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(16),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Empty + Skeleton ──
+class _Empty extends StatelessWidget {
+  const _Empty();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.cardBorder),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildBadge(
-                permitTypeLabel(typeStr).toUpperCase(),
-                AppTheme.primary,
-              ),
-              _buildBadge(
-                permitStatusLabel(statusStr).toUpperCase(),
-                permitStatusColor(statusStr),
-              ),
-            ],
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: AppTheme.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.calendar_month_outlined,
+                color: AppTheme.primary, size: 24),
           ),
           const SizedBox(height: 12),
-          Text(
-            permit['description'] ?? '',
-            style: const TextStyle(
+          const Text(
+            'Belum ada pengajuan',
+            style: TextStyle(
               color: AppTheme.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today,
-                  size: 14, color: AppTheme.textHint),
-              const SizedBox(width: 6),
-              Text(
-                "${DateFormat('dd MMM').format(DateTime.parse(permit['startDate']))} – ${DateFormat('dd MMM yyyy').format(DateTime.parse(permit['endDate']))}",
-                style: const TextStyle(color: AppTheme.textHint, fontSize: 12),
-              ),
-            ],
+          const SizedBox(height: 4),
+          const Text(
+            'Ketuk tombol + untuk mengajukan izin baru',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppTheme.textHint, fontSize: 12),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildBadge(String text, Color color) {
+class _Skeleton extends StatelessWidget {
+  const _Skeleton();
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-            color: color, fontSize: 12, fontWeight: FontWeight.bold),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE2E8F0),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 110,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 170,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

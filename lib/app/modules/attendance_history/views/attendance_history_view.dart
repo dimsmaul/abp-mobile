@@ -42,175 +42,314 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(title: const Text("Attendance History")),
-      body: Obx(() {
-        if (controller.isLoading.value && controller.items.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (controller.items.isEmpty) {
-          return _empty();
-        }
-        // Group by date.
-        final grouped = <String, List<Map>>{};
-        for (final it in controller.items) {
-          final t = DateTime.tryParse(it['serverTime']?.toString() ?? '');
-          if (t == null) continue;
-          final key = DateFormat('yyyy-MM-dd').format(t);
-          grouped.putIfAbsent(key, () => []).add(it);
-        }
-        final keys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-        final showLoader = controller.isLoadingMore.value;
-        return RefreshIndicator(
-          onRefresh: () => controller.fetch(reset: true),
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.all(16),
-            itemCount: keys.length + 1,
-            itemBuilder: (_, i) {
-              if (i == keys.length) {
-                if (showLoader) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (!controller.hasMore.value) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: Text(
-                        "No more records",
-                        style: TextStyle(color: AppTheme.textHint, fontSize: 12),
+      appBar: AppBar(
+        title: const Text('Riwayat Presensi'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
+      body: SafeArea(
+        child: Obx(() {
+          final isInitialLoading =
+              controller.isLoading.value && controller.items.isEmpty;
+          return RefreshIndicator(
+            onRefresh: () => controller.fetch(reset: true),
+            color: AppTheme.primary,
+            child: ListView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              children: [
+                _header(),
+                const SizedBox(height: 16),
+                if (isInitialLoading)
+                  ...List.generate(3, (_) => const _Skeleton())
+                else if (controller.items.isEmpty)
+                  const _Empty()
+                else ...[
+                  ...controller.items.map(_tile),
+                  if (controller.isLoadingMore.value)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Memuat lebih banyak…',
+                              style: TextStyle(
+                                color: AppTheme.textHint,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (!controller.hasMore.value)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Text(
+                          'Tidak ada riwayat lagi',
+                          style: TextStyle(
+                            color: AppTheme.textHint,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }
-              final date = keys[i];
-              final entries = grouped[date]!;
-              return _dateGroup(date, entries);
-            },
-          ),
-        );
-      }),
+                ],
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 
-  Widget _dateGroup(String date, List<Map> entries) {
-    final d = DateTime.parse(date);
-    final isToday = DateFormat('yyyy-MM-dd').format(DateTime.now()) == date;
-    final label = isToday
-        ? "Today, ${DateFormat('dd MMM yyyy').format(d)}"
-        : DateFormat('EEEE, dd MMM yyyy').format(d);
+  Widget _header() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Riwayat Presensi',
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Pantau check-in & check-out Anda',
+          style: const TextStyle(
+            color: AppTheme.textSecondary,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
 
-    DateTime? cIn, cOut;
-    for (final e in entries) {
-      final t = DateTime.tryParse(e['serverTime']?.toString() ?? '');
-      if (t == null) continue;
-      if (e['type'] == 'check_in') cIn = t;
-      if (e['type'] == 'check_out') cOut = t;
-    }
-    String duration = '-';
-    if (cIn != null && cOut != null) {
-      final mins = cOut.difference(cIn).inMinutes;
-      duration = '${mins ~/ 60}h ${mins % 60}m';
-    }
+  Widget _tile(Map item) {
+    final type = item['type']?.toString() ?? '';
+    final time = DateTime.tryParse(item['serverTime']?.toString() ?? '');
+    final loc = item['locationName']?.toString();
+    final isIn = type == 'check_in';
+    final inZone = item['isWithinZone'] == true;
+    final iconColor = isIn ? AppTheme.success : AppTheme.danger;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.cardBorder),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 14)),
-              if (cIn != null && cOut != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryLight,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(duration,
-                      style: const TextStyle(
-                          color: AppTheme.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600)),
-                ),
-            ],
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isIn ? Icons.login : Icons.logout,
+              color: iconColor,
+              size: 18,
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _slot('Check In', cIn, true, entries)),
-              Expanded(child: _slot('Check Out', cOut, false, entries)),
-            ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      isIn ? 'Check-in' : 'Check-out',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _zonePill(inZone),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    if (time != null) ...[
+                      const Icon(Icons.schedule,
+                          size: 12, color: AppTheme.textHint),
+                      const SizedBox(width: 3),
+                      Text(
+                        DateFormat('dd MMM • HH:mm').format(time),
+                        style: const TextStyle(
+                          color: AppTheme.textHint,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (loc != null && loc.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      const Icon(Icons.place_outlined,
+                          size: 12, color: AppTheme.textHint),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          loc,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppTheme.textHint,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _slot(String label, DateTime? time, bool isIn, List<Map> entries) {
-    final entry = entries.firstWhere(
-      (e) => e['type'] == (isIn ? 'check_in' : 'check_out'),
-      orElse: () => {},
-    );
-    final loc = entry['locationName']?.toString();
-    final inZone = entry['isWithinZone'] == true;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(isIn ? Icons.login : Icons.logout,
-                size: 14,
-                color: time == null ? AppTheme.textHint : AppTheme.primary),
-            const SizedBox(width: 4),
-            Text(label,
-                style: const TextStyle(
-                    color: AppTheme.textHint, fontSize: 12)),
-            if (time != null && inZone) ...[
-              const SizedBox(width: 4),
-              const Icon(Icons.verified,
-                  color: AppTheme.success, size: 12),
-            ],
-          ],
+  Widget _zonePill(bool inZone) {
+    final c = inZone ? AppTheme.success : AppTheme.warning;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        inZone ? 'Dalam zona' : 'Luar zona',
+        style: TextStyle(
+          color: c,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
         ),
-        const SizedBox(height: 4),
-        Text(time != null ? DateFormat('HH:mm').format(time) : '--:--',
-            style: const TextStyle(
-                fontSize: 18, fontWeight: FontWeight.w700)),
-        if (loc != null && loc.isNotEmpty)
-          Text(loc,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  color: AppTheme.textHint, fontSize: 11)),
-      ],
+      ),
     );
   }
+}
 
-  Widget _empty() {
-    return Center(
+class _Empty extends StatelessWidget {
+  const _Empty();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.history, size: 56, color: AppTheme.textHint),
-          SizedBox(height: 12),
-          Text("No attendance records yet",
-              style: TextStyle(color: AppTheme.textHint)),
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: AppTheme.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.inbox_outlined,
+                color: AppTheme.primary, size: 24),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Belum ada presensi',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Check-in lewat tab Camera untuk memulai',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppTheme.textHint, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Skeleton extends StatelessWidget {
+  const _Skeleton();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE2E8F0),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 100,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 160,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
