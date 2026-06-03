@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/avatar_bubble.dart';
 import '../../../core/theme.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/profile_controller.dart';
@@ -114,10 +115,6 @@ class _Header extends StatelessWidget {
                 final user = controller.auth.user.value;
                 final imageUrl = user?['image']?.toString();
                 final name = user?['name']?.toString() ?? 'User';
-                final initial = name.isNotEmpty
-                    ? name.characters.first.toUpperCase()
-                    : '?';
-                final hasImage = imageUrl != null && imageUrl.isNotEmpty;
 
                 return Stack(
                   alignment: Alignment.center,
@@ -134,21 +131,13 @@ class _Header extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: CircleAvatar(
+                      child: AvatarBubble(
+                        imageUrl: imageUrl,
+                        name: name,
                         radius: 48,
                         backgroundColor: Colors.white,
-                        backgroundImage:
-                            hasImage ? NetworkImage(imageUrl) : null,
-                        child: hasImage
-                            ? null
-                            : Text(
-                                initial,
-                                style: const TextStyle(
-                                  color: AppTheme.primary,
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                        foregroundColor: AppTheme.primary,
+                        fontSize: 36,
                       ),
                     ),
                     if (controller.isUploadingAvatar.value)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../../core/avatar_bubble.dart';
 import '../../../core/theme.dart';
 import '../../../data/services/attendance_queue_service.dart';
 import '../controllers/home_controller.dart';
@@ -86,29 +87,14 @@ class HomeView extends GetView<HomeController> {
                 controller.auth.user.value?['image']?.toString();
             final name =
                 controller.auth.user.value?['name']?.toString() ?? 'User';
-            final initial =
-                name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
-            final hasImage = imageUrl != null && imageUrl.isNotEmpty;
-            return Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppTheme.cardBorder, width: 2),
-              ),
-              child: CircleAvatar(
-                radius: 24,
-                backgroundColor: AppTheme.primaryLight,
-                backgroundImage: hasImage ? NetworkImage(imageUrl) : null,
-                child: hasImage
-                    ? null
-                    : Text(
-                        initial,
-                        style: const TextStyle(
-                          color: AppTheme.primary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-              ),
+            return AvatarBubble(
+              imageUrl: imageUrl,
+              name: name,
+              radius: 24,
+              backgroundColor: AppTheme.primaryLight,
+              foregroundColor: AppTheme.primary,
+              fontSize: 18,
+              border: Border.all(color: AppTheme.cardBorder, width: 2),
             );
           }),
         ),
