@@ -14,6 +14,10 @@ class ReportsListView extends GetView<ReportsController> {
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
         title: const Text('Laporan Saya'),
+        backgroundColor: AppTheme.scaffoldBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: AppTheme.textPrimary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
@@ -32,12 +36,6 @@ class ReportsListView extends GetView<ReportsController> {
             return CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-                    child: _header(),
-                  ),
-                ),
                 SliverToBoxAdapter(child: _filterChips()),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
@@ -48,30 +46,6 @@ class ReportsListView extends GetView<ReportsController> {
           }),
         ),
       ),
-    );
-  }
-
-  Widget _header() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          'Laporan Saya',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'Riwayat laporan lapangan yang Anda ajukan',
-          style: TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 13,
-          ),
-        ),
-      ],
     );
   }
 
@@ -149,7 +123,10 @@ class ReportsListView extends GetView<ReportsController> {
       );
     }
     if (controller.reports.isEmpty) {
-      return const SliverToBoxAdapter(child: _Empty());
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: const Center(child: _Empty()),
+      );
     }
     return SliverList(
       delegate: SliverChildBuilderDelegate(
@@ -297,15 +274,10 @@ class _Empty extends StatelessWidget {
   const _Empty();
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 48,

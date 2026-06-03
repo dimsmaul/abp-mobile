@@ -14,6 +14,10 @@ class PermitView extends GetView<PermitController> {
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
         title: const Text('Pengajuan Saya'),
+        backgroundColor: AppTheme.scaffoldBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: AppTheme.textPrimary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
@@ -23,6 +27,34 @@ class PermitView extends GetView<PermitController> {
         child: Obx(() {
           final isInitialLoading =
               controller.isLoading.value && controller.permits.isEmpty;
+
+          if (!isInitialLoading && controller.permits.isEmpty) {
+            return LayoutBuilder(
+              builder: (ctx, bc) => RefreshIndicator(
+                onRefresh: () async {
+                  await controller.fetchMyPermits();
+                  await controller.loadLeaveBalance();
+                },
+                color: AppTheme.primary,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: bc.maxHeight),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: _LeaveBalanceCard(controller: controller),
+                        ),
+                        const Expanded(child: Center(child: _Empty())),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
           return RefreshIndicator(
             onRefresh: () async {
               await controller.fetchMyPermits();
@@ -31,18 +63,14 @@ class PermitView extends GetView<PermitController> {
             color: AppTheme.primary,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 96),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
               children: [
                 _LeaveBalanceCard(controller: controller),
                 Obx(() => controller.leaveBalance.value == null
                     ? const SizedBox.shrink()
-                    : const SizedBox(height: 20)),
-                _header(),
-                const SizedBox(height: 12),
+                    : const SizedBox(height: 16)),
                 if (isInitialLoading)
                   ...List.generate(3, (_) => const _Skeleton())
-                else if (controller.permits.isEmpty)
-                  const _Empty()
                 else
                   ...controller.permits.map((p) => _PermitCard(permit: p)),
               ],
@@ -54,30 +82,6 @@ class PermitView extends GetView<PermitController> {
         onPressed: () => _showAddPermitSheet(context),
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  Widget _header() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          'Pengajuan Saya',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'Cuti, sakit, izin, dinas',
-          style: TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 13,
-          ),
-        ),
-      ],
     );
   }
 
@@ -338,15 +342,10 @@ class _Empty extends StatelessWidget {
   const _Empty();
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 48,

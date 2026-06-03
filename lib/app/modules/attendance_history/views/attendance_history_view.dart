@@ -44,6 +44,10 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
         title: const Text('Riwayat Presensi'),
+        backgroundColor: AppTheme.scaffoldBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: AppTheme.textPrimary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
@@ -53,20 +57,33 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
         child: Obx(() {
           final isInitialLoading =
               controller.isLoading.value && controller.items.isEmpty;
+
+          if (!isInitialLoading && controller.items.isEmpty) {
+            return LayoutBuilder(
+              builder: (ctx, bc) => RefreshIndicator(
+                onRefresh: () => controller.fetch(reset: true),
+                color: AppTheme.primary,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: bc.maxHeight),
+                    child: const Center(child: _Empty()),
+                  ),
+                ),
+              ),
+            );
+          }
+
           return RefreshIndicator(
             onRefresh: () => controller.fetch(reset: true),
             color: AppTheme.primary,
             child: ListView(
               controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               children: [
-                _header(),
-                const SizedBox(height: 16),
                 if (isInitialLoading)
                   ...List.generate(3, (_) => const _Skeleton())
-                else if (controller.items.isEmpty)
-                  const _Empty()
                 else ...[
                   ...controller.items.map(_tile),
                   if (controller.isLoadingMore.value)
@@ -115,30 +132,6 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
           );
         }),
       ),
-    );
-  }
-
-  Widget _header() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Riwayat Presensi',
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Pantau check-in & check-out Anda',
-          style: const TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 13,
-          ),
-        ),
-      ],
     );
   }
 
@@ -262,15 +255,10 @@ class _Empty extends StatelessWidget {
   const _Empty();
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             width: 48,
