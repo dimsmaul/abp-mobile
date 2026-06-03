@@ -1,4 +1,4 @@
-import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 
 /// Lightweight face presence check. Returns true if at least one face is
 /// detected in the image at [imagePath]. Uses ML Kit face detection in fast
