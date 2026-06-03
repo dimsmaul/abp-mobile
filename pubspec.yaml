@@ -39,7 +39,10 @@ dependencies:
   shared_preferences: ^2.5.5
   intl: ^0.20.2
   camera: ^0.12.0+1
-  google_ml_kit: ^0.21.0
+  # Slim: only face detection. Umbrella `google_ml_kit` pulled every ML
+  # model (digital ink, entity extraction, pose, genai, segmentation, ...)
+  # bloating the APK to >100MB and causing native conflicts.
+  google_mlkit_face_detection: ^0.13.2
   geolocator: ^14.0.2
   envied: ^1.3.4
   hive: ^2.2.3
