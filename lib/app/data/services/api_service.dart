@@ -131,6 +131,17 @@ class ApiService extends GetxService {
   Future<Response> uploadAvatar(FormData data) =>
       _dio.post('/mobile/me/avatar', data: data);
 
+  Future<Response> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    bool revokeOtherSessions = false,
+  }) =>
+      _dio.post('/auth/change-password', data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'revokeOtherSessions': revokeOtherSessions,
+      });
+
   // ── Auth persistence ─────────────────────────────
   /// Accept any of these shapes from better-auth or wrapped envelope:
   /// { token, user }

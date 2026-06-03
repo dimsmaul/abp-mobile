@@ -16,6 +16,8 @@ abstract class Routes {
   static const REPORT_CREATE = _Paths.REPORT_CREATE;
   static const REPORT_DETAIL = _Paths.REPORT_DETAIL;
   static const PERMIT = _Paths.PERMIT;
+  static const PROFILE_EDIT = _Paths.PROFILE_EDIT;
+  static const CHANGE_PASSWORD = _Paths.CHANGE_PASSWORD;
 }
 
 abstract class _Paths {
@@ -34,4 +36,6 @@ abstract class _Paths {
   static const REPORT_CREATE = '/reports/create';
   static const REPORT_DETAIL = '/reports/detail';
   static const PERMIT = '/permit';
+  static const PROFILE_EDIT = '/profile/edit';
+  static const CHANGE_PASSWORD = '/profile/change-password';
 }
