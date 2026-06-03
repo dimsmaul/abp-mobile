@@ -152,6 +152,17 @@ class ApiService extends GetxService {
   Future<Response> fetchMyLeaveBalance() =>
       _dio.get('/mobile/me/leave-balance');
 
+  // ── Announcements ────────────────────────────────
+  Future<Response> fetchAnnouncements({int page = 1, int limit = 20}) {
+    return _dio.get('/mobile/announcements', queryParameters: {
+      'page': page,
+      'limit': limit,
+    });
+  }
+
+  Future<Response> fetchAnnouncementDetail(String id) =>
+      _dio.get('/mobile/announcements/$id');
+
   // ── Profile ──────────────────────────────────────
   Future<Response> updateProfile({String? name, String? department}) {
     final body = <String, dynamic>{};

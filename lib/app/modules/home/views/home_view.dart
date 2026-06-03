@@ -30,6 +30,8 @@ class HomeView extends GetView<HomeController> {
                 const SizedBox(height: 24),
                 _buildQuickActions(textTheme),
                 const SizedBox(height: 24),
+                _buildAnnouncementsSection(),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -406,6 +408,155 @@ class HomeView extends GetView<HomeController> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Pengumuman',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            TextButton(
+              onPressed: controller.goToAnnouncements,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                'Lihat semua',
+                style: TextStyle(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Obx(() {
+          final items = controller.announcements;
+          if (items.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.cardBorder),
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.campaign_outlined,
+                      size: 32, color: AppTheme.textHint),
+                  SizedBox(height: 6),
+                  Text(
+                    'Belum ada pengumuman',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          // BE already sorts pinned-first + publishedAt desc. Slice to 3.
+          final top = items.take(3).toList();
+          return Column(
+            children: top.map(_announcementCard).toList(),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _announcementCard(Map item) {
+    final id = item['id']?.toString() ?? '';
+    final title = item['title']?.toString() ?? '';
+    final body = item['body']?.toString() ?? '';
+    final priority = item['priority']?.toString() ?? 'normal';
+    final isPinned = item['isPinned'] == true;
+    final pColor = priority == 'high'
+        ? AppTheme.danger
+        : priority == 'low'
+            ? AppTheme.textHint
+            : AppTheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => controller.openAnnouncementDetail(id),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.cardBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: pColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                  if (isPinned)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 6),
+                      child: Icon(Icons.push_pin,
+                          size: 14, color: AppTheme.warning),
+                    ),
+                ],
+              ),
+              if (body.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  body,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),

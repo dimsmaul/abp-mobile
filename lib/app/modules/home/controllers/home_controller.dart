@@ -13,6 +13,7 @@ class HomeController extends GetxController {
   final checkOutTime = Rxn<DateTime>();
   final lastLocation = Rxn<String>();
   final recent = <Map>[].obs;
+  final announcements = <Map>[].obs;
 
   @override
   void onInit() {
@@ -47,6 +48,18 @@ class HomeController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+
+    // Announcements load separately so a failure here doesn't break the
+    // attendance card that users actually need to clock in.
+    try {
+      final res = await api.fetchAnnouncements(limit: 3);
+      if (res.statusCode == 200) {
+        final raw = res.data['data']?['items'] ?? res.data['data'] ?? [];
+        announcements.assignAll(List<Map>.from(raw as List));
+      }
+    } on DioException catch (_) {
+      // Silent on dashboard — announcements are non-critical.
+    }
   }
 
   void _populateToday(List<Map> items) {
@@ -66,4 +79,7 @@ class HomeController extends GetxController {
   void goToHistory() => Get.toNamed('/attendance-history');
   void goToProfile() => Get.toNamed('/profile');
   void goToPermit() => Get.toNamed('/permit');
+  void goToAnnouncements() => Get.toNamed('/announcements');
+  void openAnnouncementDetail(String id) =>
+      Get.toNamed('/announcements/detail', arguments: id);
 }

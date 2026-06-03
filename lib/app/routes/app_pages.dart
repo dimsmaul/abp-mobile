@@ -10,6 +10,9 @@ import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/permit/bindings/permit_binding.dart';
 import '../modules/permit/views/permit_view.dart';
+import '../modules/announcement/bindings/announcement_binding.dart';
+import '../modules/announcement/views/announcement_list_view.dart';
+import '../modules/announcement/views/announcement_detail_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/login/bindings/login_binding.dart';
@@ -108,6 +111,16 @@ class AppPages {
       name: _Paths.PERMIT,
       page: () => const PermitView(),
       binding: PermitBinding(),
+    ),
+    GetPage(
+      name: _Paths.ANNOUNCEMENT_LIST,
+      page: () => const AnnouncementListView(),
+      binding: AnnouncementBinding(),
+    ),
+    GetPage(
+      name: _Paths.ANNOUNCEMENT_DETAIL,
+      page: () => const AnnouncementDetailView(),
+      binding: AnnouncementBinding(),
     ),
     GetPage(
       name: _Paths.PROFILE_EDIT,
