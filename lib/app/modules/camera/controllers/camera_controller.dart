@@ -1,6 +1,5 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:flutter/services.dart' show DeviceOrientation;
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -72,12 +71,17 @@ class CustomCameraController extends GetxController {
     );
 
     try {
+      // PLAIN initialize() only. Any post-init reconfiguration
+      // (lockCaptureOrientation, resumePreview, etc.) on camera_android_camerax
+      // causes a CameraGraph teardown/recreate cycle that GCs the Pigeon
+      // ProxyApi observer for the Texture, surfacing as
+      // 'missing-instance-error: Observer.onChanged failed because native
+      // instance was not in the instance manager' — and a black preview.
       await ctrl.initialize();
-      await ctrl.lockCaptureOrientation(DeviceOrientation.portraitUp);
-      await ctrl.resumePreview();
       cameraController = ctrl;
       isInitialized.value = true;
-      debugPrint('[camera] initialized aspect=${ctrl.value.aspectRatio} preview=${ctrl.value.previewSize}');
+      debugPrint(
+          '[camera] initialized aspect=${ctrl.value.aspectRatio} preview=${ctrl.value.previewSize}');
     } catch (e) {
       await ctrl.dispose();
       debugPrint('[camera] init error: $e');
