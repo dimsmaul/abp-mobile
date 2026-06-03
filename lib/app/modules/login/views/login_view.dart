@@ -73,32 +73,41 @@ class LoginView extends GetView<LoginController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Log in", style: textTheme.headlineMedium),
+                    Text("Masuk", style: textTheme.headlineMedium),
                     const SizedBox(height: 4),
-                    Text("Welcome back, please sign in to continue",
+                    Text("Selamat datang kembali. Silakan masuk untuk melanjutkan.",
                         style: textTheme.bodyMedium),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
+
+                    const _FieldLabel('Email'),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: controller.emailController,
                       keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
                       decoration: const InputDecoration(
-                        labelText: "Email",
-                        prefixIcon: Icon(Icons.email_outlined),
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        hintText: "you@company.com",
+                        prefixIcon: Icon(Icons.alternate_email, size: 20),
                       ),
                     ),
+
                     const SizedBox(height: 16),
+                    const _FieldLabel('Password'),
+                    const SizedBox(height: 8),
                     Obx(() => TextField(
                           controller: controller.passwordController,
                           obscureText: controller.obscurePassword.value,
                           decoration: InputDecoration(
-                            labelText: "Password",
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            floatingLabelBehavior: FloatingLabelBehavior.always,
+                            hintText: "••••••••",
+                            prefixIcon:
+                                const Icon(Icons.lock_outline, size: 20),
                             suffixIcon: IconButton(
-                              icon: Icon(controller.obscurePassword.value
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined),
+                              icon: Icon(
+                                controller.obscurePassword.value
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 20,
+                              ),
                               onPressed: controller.toggleObscure,
                             ),
                           ),
@@ -134,7 +143,7 @@ class LoginView extends GetView<LoginController> {
                                   child: CircularProgressIndicator(
                                       color: Colors.white, strokeWidth: 2.5),
                                 )
-                              : const Text("Log in"),
+                              : const Text("Masuk"),
                         )),
                     const SizedBox(height: 16),
                     Center(
@@ -142,11 +151,11 @@ class LoginView extends GetView<LoginController> {
                         onPressed: () => Get.toNamed('/register'),
                         child: Text.rich(
                           TextSpan(
-                            text: "Don't have an account? ",
+                            text: "Belum punya akun? ",
                             style: textTheme.bodyMedium,
                             children: const [
                               TextSpan(
-                                text: "Register",
+                                text: "Daftar",
                                 style: TextStyle(
                                   color: AppTheme.primary,
                                   fontWeight: FontWeight.bold,
@@ -163,6 +172,23 @@ class LoginView extends GetView<LoginController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  final String text;
+  const _FieldLabel(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: AppTheme.textSecondary,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.4,
       ),
     );
   }

@@ -16,31 +16,50 @@ class HomeView extends GetView<HomeController> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controller.refresh,
+          color: AppTheme.primary,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 80),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(textTheme),
-                const SizedBox(height: 24),
+                _buildHeader(),
+                const SizedBox(height: 20),
                 _buildAttendanceCard(textTheme),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 _buildQuickActions(textTheme),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Recent Attendance", style: textTheme.titleMedium),
+                    const Text(
+                      'Aktivitas Terkini',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
                     TextButton(
                       onPressed: controller.goToHistory,
-                      child: const Text("See all"),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'Lihat semua',
+                        style: TextStyle(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 _buildRecent(),
-                const SizedBox(height: 80),
               ],
             ),
           ),
@@ -49,39 +68,91 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildHeader(TextTheme textTheme) {
+  String _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 11) return 'Selamat pagi';
+    if (h < 15) return 'Selamat siang';
+    if (h < 19) return 'Selamat sore';
+    return 'Selamat malam';
+  }
+
+  Widget _buildHeader() {
     return Row(
       children: [
         GestureDetector(
           onTap: controller.goToProfile,
-          child: const CircleAvatar(
-            radius: 26,
-            backgroundColor: AppTheme.primaryLight,
-            child: Icon(Icons.person, color: AppTheme.primary, size: 28),
-          ),
+          child: Obx(() {
+            final imageUrl =
+                controller.auth.user.value?['image']?.toString();
+            final name =
+                controller.auth.user.value?['name']?.toString() ?? 'User';
+            final initial =
+                name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+            final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+            return Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.cardBorder, width: 2),
+              ),
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: AppTheme.primaryLight,
+                backgroundImage: hasImage ? NetworkImage(imageUrl) : null,
+                child: hasImage
+                    ? null
+                    : Text(
+                        initial,
+                        style: const TextStyle(
+                          color: AppTheme.primary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            );
+          }),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Welcome back",
-                style: textTheme.bodySmall?.copyWith(color: AppTheme.textHint),
+                _greeting(),
+                style: const TextStyle(
+                  color: AppTheme.textHint,
+                  fontSize: 12,
+                ),
               ),
+              const SizedBox(height: 2),
               Obx(
                 () => Text(
-                  controller.user?['name']?.toString() ?? "User",
-                  style: textTheme.titleMedium,
+                  controller.auth.user.value?['name']?.toString() ?? 'User',
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               _buildPendingBadge(),
             ],
           ),
         ),
-        IconButton(
-          onPressed: controller.refresh,
-          icon: const Icon(Icons.refresh, color: AppTheme.textSecondary),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppTheme.cardBorder),
+          ),
+          child: IconButton(
+            onPressed: controller.refresh,
+            icon: const Icon(Icons.refresh,
+                color: AppTheme.textSecondary, size: 20),
+            tooltip: 'Refresh',
+          ),
         ),
       ],
     );
@@ -124,6 +195,52 @@ class HomeView extends GetView<HomeController> {
     });
   }
 
+  Widget _attendanceStatusBadge() {
+    return Obx(() {
+      final hasIn = controller.checkInTime.value != null;
+      final hasOut = controller.checkOutTime.value != null;
+      String label;
+      Color bg;
+      IconData icon;
+      if (!hasIn) {
+        label = 'Belum Check-in';
+        bg = Colors.white.withValues(alpha: 0.18);
+        icon = Icons.access_time;
+      } else if (!hasOut) {
+        label = 'Sedang Bekerja';
+        bg = Colors.white.withValues(alpha: 0.25);
+        icon = Icons.circle;
+      } else {
+        label = 'Selesai Hari Ini';
+        bg = Colors.white.withValues(alpha: 0.25);
+        icon = Icons.check_circle_outline;
+      }
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 12),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
   Widget _buildAttendanceCard(TextTheme textTheme) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -146,13 +263,23 @@ class HomeView extends GetView<HomeController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.calendar_today, color: Colors.white, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                DateFormat('EEEE, dd MMM yyyy').format(DateTime.now()),
-                style: textTheme.bodyMedium?.copyWith(color: Colors.white),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      color: Colors.white, size: 14),
+                  const SizedBox(width: 6),
+                  Text(
+                    DateFormat('EEEE, dd MMM yyyy').format(DateTime.now()),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
+              _attendanceStatusBadge(),
             ],
           ),
           const SizedBox(height: 20),
@@ -161,33 +288,36 @@ class HomeView extends GetView<HomeController> {
               Expanded(child: _timeBlock("Check In", controller.checkInTime)),
               Container(
                 width: 1,
-                height: 40,
+                height: 44,
                 color: Colors.white.withValues(alpha: 0.2),
               ),
               Expanded(child: _timeBlock("Check Out", controller.checkOutTime)),
             ],
           ),
-          const SizedBox(height: 16),
           Obx(() {
             final loc = controller.lastLocation.value;
             if (loc == null || loc.isEmpty) return const SizedBox.shrink();
-            return Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  color: Colors.white70,
-                  size: 14,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    loc,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+            return Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    color: Colors.white70,
+                    size: 14,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      loc,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
             );
           }),
         ],
@@ -213,6 +343,7 @@ class HomeView extends GetView<HomeController> {
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -224,22 +355,21 @@ class HomeView extends GetView<HomeController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Quick Actions", style: textTheme.titleMedium),
+        const Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+          ),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
+            _action(icon: Icons.assignment_outlined, onTap: controller.goToReports),
+            _action(icon: Icons.history, onTap: controller.goToHistory),
             _action(
-              icon: Icons.assignment_outlined,
-              onTap: controller.goToReports,
-            ),
-            _action(
-              icon: Icons.history,
-              onTap: controller.goToHistory,
-            ),
-            _action(
-              icon: Icons.event_note_outlined,
-              onTap: controller.goToPermit,
-            ),
+                icon: Icons.event_note_outlined, onTap: controller.goToPermit),
           ],
         ),
       ],
@@ -251,18 +381,24 @@ class HomeView extends GetView<HomeController> {
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(right: 12),
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.cardBorder),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 22),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppTheme.cardBorder),
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: AppTheme.primary, size: 26),
+            ),
           ),
-          alignment: Alignment.center,
-          child: Icon(icon, color: AppTheme.primary, size: 26),
         ),
       ),
     );
@@ -271,25 +407,36 @@ class HomeView extends GetView<HomeController> {
   Widget _buildRecent() {
     return Obx(() {
       if (controller.isLoading.value && controller.recent.isEmpty) {
-        return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 32),
-          child: Center(child: CircularProgressIndicator()),
+        return Column(
+          children: List.generate(3, (_) => const _RecentSkeleton()),
         );
       }
       if (controller.recent.isEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Column(
-              children: const [
-                Icon(Icons.history, size: 40, color: AppTheme.textHint),
-                SizedBox(height: 8),
-                Text(
-                  "No recent activity",
-                  style: TextStyle(color: AppTheme.textHint),
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.cardBorder),
+          ),
+          child: Column(
+            children: const [
+              Icon(Icons.history, size: 40, color: AppTheme.textHint),
+              SizedBox(height: 8),
+              Text(
+                'Belum ada aktivitas',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Check-in di tab Camera untuk memulai',
+                style: TextStyle(color: AppTheme.textHint, fontSize: 12),
+              ),
+            ],
           ),
         );
       }
@@ -300,21 +447,27 @@ class HomeView extends GetView<HomeController> {
   Widget _recentTile(Map item) {
     final type = item['type']?.toString() ?? '';
     final time = DateTime.tryParse(item['serverTime']?.toString() ?? '');
+    final loc = item['locationName']?.toString();
     final isIn = type == 'check_in';
+    final inZone = item['isWithinZone'] == true;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.cardBorder),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: (isIn ? AppTheme.success : AppTheme.danger)
-                .withValues(alpha: 0.12),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: (isIn ? AppTheme.success : AppTheme.danger)
+                  .withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
             child: Icon(
               isIn ? Icons.login : Icons.logout,
               color: isIn ? AppTheme.success : AppTheme.danger,
@@ -326,23 +479,125 @@ class HomeView extends GetView<HomeController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isIn ? 'Check In' : 'Check Out',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                if (time != null)
-                  Text(
-                    DateFormat('dd MMM • HH:mm').format(time),
-                    style: const TextStyle(
-                      color: AppTheme.textHint,
-                      fontSize: 12,
+                Row(
+                  children: [
+                    Text(
+                      isIn ? 'Check-in' : 'Check-out',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: (inZone ? AppTheme.success : AppTheme.warning)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        inZone ? 'Dalam zona' : 'Luar zona',
+                        style: TextStyle(
+                          color: inZone ? AppTheme.success : AppTheme.warning,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    if (time != null) ...[
+                      const Icon(Icons.schedule,
+                          size: 12, color: AppTheme.textHint),
+                      const SizedBox(width: 3),
+                      Text(
+                        DateFormat('dd MMM • HH:mm').format(time),
+                        style: const TextStyle(
+                          color: AppTheme.textHint,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                    if (loc != null && loc.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      const Icon(Icons.place_outlined,
+                          size: 12, color: AppTheme.textHint),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          loc,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppTheme.textHint,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
-          if (item['isWithinZone'] == true)
-            const Icon(Icons.verified, color: AppTheme.success, size: 18),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentSkeleton extends StatelessWidget {
+  const _RecentSkeleton();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE2E8F0),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 100,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 160,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
