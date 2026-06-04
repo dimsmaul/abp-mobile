@@ -108,4 +108,13 @@ class NotificationService extends GetxService {
       debugPrint('[FCM] registerDevice failed: $e');
     }
   }
+
+  /// Public hook for AuthController — call after a successful sign-in so
+  /// the cached FCM token (obtained at app launch before the user had a
+  /// session) gets persisted to the user's row on BE.
+  Future<void> registerCurrentToken() async {
+    final token = fcmToken.value;
+    if (token == null || token.isEmpty) return;
+    await _registerWithBackend(token);
+  }
 }
