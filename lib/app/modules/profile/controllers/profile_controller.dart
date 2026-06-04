@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/dialogs.dart';
+import '../../../core/face_embed.dart';
 import '../../../core/image_utils.dart';
 import '../../../core/theme.dart';
 import '../../../data/controllers/auth_controller.dart';
@@ -146,7 +148,33 @@ class ProfileController extends GetxController {
           debugPrint('[profile] avatar uploaded: $imageUrl');
           _mergeUserUpdate({'image': imageUrl});
         }
-        Get.snackbar('Success', 'Foto profil diperbarui');
+
+        // Avatar IS the face reference — derive the embedding from the
+        // same photo and enroll it. If ML Kit can't see a face in the
+        // photo the user just picked, we surface a blocking dialog rather
+        // than a passive snackbar so they actually notice and re-upload —
+        // otherwise the attendance check-in keeps rejecting them with
+        // "FACE_NOT_ENROLLED" and they have no idea why.
+        final enrollOk = await _enrollFaceFrom(file.path);
+        if (enrollOk) {
+          Get.snackbar(
+            'Success',
+            'Foto profil + verifikasi wajah tersimpan',
+          );
+        } else {
+          await showAppResultDialog(
+            success: false,
+            title: 'Wajah Tidak Terdeteksi',
+            message:
+                'Foto profil tersimpan tapi sistem tidak menemukan wajah di '
+                'foto tersebut. Ganti dengan foto:\n'
+                '• Menghadap kamera (frontal)\n'
+                '• Pencahayaan cukup terang\n'
+                '• Hanya satu orang (Anda sendiri)\n\n'
+                'Tanpa wajah terbaca, Anda belum bisa melakukan presensi.',
+            okLabel: 'OK',
+          );
+        }
       } else {
         Get.snackbar('Error', 'Gagal mengunggah foto');
       }
@@ -165,6 +193,33 @@ class ProfileController extends GetxController {
     current.addAll(patch);
     auth.user.value = current;
     api.box.put('user', current);
+  }
+
+  /// Extract a face embedding from [imagePath] and POST it to
+  /// /mobile/me/face. Returns true on success — caller surfaces a result
+  /// dialog when this returns false so the user can re-upload a clearer
+  /// photo before the next attendance attempt.
+  Future<bool> _enrollFaceFrom(String imagePath) async {
+    try {
+      final embedding =
+          await FaceEmbedder.instance.embedFromFile(imagePath);
+      if (embedding == null) {
+        debugPrint('[profile] no face detected in avatar — skip enroll');
+        return false;
+      }
+      final res = await api.enrollFace(embedding.toList());
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        _mergeUserUpdate({'faceRecognitionEnabled': true});
+        return true;
+      }
+      debugPrint(
+        '[profile] enrollFace HTTP ${res.statusCode} body=${res.data}',
+      );
+      return false;
+    } catch (e) {
+      debugPrint('[profile] face enroll error: $e');
+      return false;
+    }
   }
 
   Future<void> logout() async {

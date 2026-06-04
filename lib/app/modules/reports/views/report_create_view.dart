@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/constants.dart';
 import '../../../core/theme.dart';
 import '../controllers/reports_controller.dart';
 
@@ -10,7 +11,17 @@ class ReportCreateView extends GetView<ReportsController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(title: const Text("New Report")),
+      appBar: AppBar(
+        title: const Text('Buat Laporan'),
+        backgroundColor: AppTheme.scaffoldBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: AppTheme.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -96,17 +107,131 @@ class ReportCreateView extends GetView<ReportsController> {
   }
 
   Widget _categorySelector() {
-    return Obx(() => Wrap(
+    return Obx(() {
+      // Touch the observable inside the Obx scope so it actually subscribes
+      // to changes. Nested builders (LayoutBuilder etc) run later, outside
+      // the tracking scope, which is what triggered the "improper use of
+      // GetX" exception when we accessed `.value` only from inside them.
+      final currentCategory = controller.category.value;
+      return LayoutBuilder(builder: (ctx, constraints) {
+        // Two-up grid sized to fit the available width with an 8px gap.
+        final cardWidth = (constraints.maxWidth - 8) / 2;
+        return Wrap(
           spacing: 8,
           runSpacing: 8,
           children: ReportsController.categories.map((c) {
-            final selected = controller.category.value == c;
-            return ChoiceChip(
-              label: Text(c[0].toUpperCase() + c.substring(1)),
-              selected: selected,
-              onSelected: (_) => controller.category.value = c,
+            final selected = currentCategory == c;
+            final color = _categoryColor(c);
+            return SizedBox(
+              width: cardWidth,
+              child: _CategoryCard(
+                label: reportCategoryLabel(c),
+                icon: _categoryIcon(c),
+                color: color,
+                selected: selected,
+                onTap: () => controller.category.value = c,
+              ),
             );
           }).toList(),
-        ));
+        );
+      });
+    });
+  }
+
+  IconData _categoryIcon(String cat) {
+    switch (cat) {
+      case 'weather':
+        return Icons.cloud_outlined;
+      case 'technical':
+        return Icons.build_outlined;
+      case 'progress':
+        return Icons.trending_up;
+      default:
+        return Icons.note_outlined;
+    }
+  }
+
+  Color _categoryColor(String cat) {
+    switch (cat) {
+      case 'weather':
+        return const Color(0xFF3B82F6); // blue
+      case 'technical':
+        return AppTheme.warning;
+      case 'progress':
+        return AppTheme.primary;
+      default:
+        return AppTheme.textHint;
+    }
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CategoryCard({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: selected
+                ? color.withValues(alpha: 0.10)
+                : AppTheme.cardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? color : AppTheme.cardBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Mirrors the list card's icon badge (40×40 tinted circle).
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: selected ? color : AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (selected)
+                Icon(Icons.check_circle, color: color, size: 18),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

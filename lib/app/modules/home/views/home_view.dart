@@ -603,7 +603,8 @@ class HomeView extends GetView<HomeController> {
 
   Widget _recentTile(Map item) {
     final type = item['type']?.toString() ?? '';
-    final time = DateTime.tryParse(item['serverTime']?.toString() ?? '');
+    final time =
+        DateTime.tryParse(item['serverTime']?.toString() ?? '')?.toLocal();
     final loc = item['locationName']?.toString();
     final isIn = type == 'check_in';
     final inZone = item['isWithinZone'] == true;

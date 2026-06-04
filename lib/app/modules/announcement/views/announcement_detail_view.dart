@@ -11,7 +11,17 @@ class AnnouncementDetailView extends GetView<AnnouncementController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(title: const Text('Detail Pengumuman')),
+      appBar: AppBar(
+        title: const Text('Detail Pengumuman'),
+        backgroundColor: AppTheme.scaffoldBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: AppTheme.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
       body: Obx(() {
         if (controller.isDetailLoading.value && controller.detail.value == null) {
           return const Center(child: CircularProgressIndicator());

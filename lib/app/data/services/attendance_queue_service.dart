@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart' as dio_pkg;
@@ -48,6 +49,7 @@ class AttendanceQueueService extends GetxService {
     required String photoPath,
     required double lat,
     required double lng,
+    List<double>? embedding,
   }) async {
     final item = <String, dynamic>{
       'type': type,
@@ -55,6 +57,7 @@ class AttendanceQueueService extends GetxService {
       'latitude': lat,
       'longitude': lng,
       'queuedAt': DateTime.now().toIso8601String(),
+      if (embedding != null) 'embedding': embedding,
     };
     await _box.add(item);
     pendingCount.value = _box.length;
@@ -98,6 +101,10 @@ class AttendanceQueueService extends GetxService {
 
         try {
           final fileName = photoPath.split('/').last;
+          final rawEmb = item['embedding'];
+          final embedding = rawEmb is List
+              ? rawEmb.map((e) => (e as num).toDouble()).toList()
+              : null;
           final form = dio_pkg.FormData.fromMap({
             'photo': await dio_pkg.MultipartFile.fromFile(
               photoPath,
@@ -105,6 +112,7 @@ class AttendanceQueueService extends GetxService {
             ),
             'latitude': item['latitude'],
             'longitude': item['longitude'],
+            if (embedding != null) 'faceEmbedding': jsonEncode(embedding),
           });
           final res = type == 'check_in'
               ? await api.checkIn(form)
