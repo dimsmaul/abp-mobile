@@ -13,7 +13,7 @@ class ReportDetailView extends GetView<ReportsController> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Detail Laporan'),
+        title: const Text('Report Details'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,

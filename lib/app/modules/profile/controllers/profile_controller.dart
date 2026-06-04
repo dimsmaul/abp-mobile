@@ -35,13 +35,13 @@ class ProfileController extends GetxController {
         if (root is Map) {
           _mergeUserUpdate(Map<String, dynamic>.from(root));
         }
-        Get.snackbar('Success', 'Profil diperbarui');
+        Get.snackbar('Success', 'Profile updated');
         return true;
       }
-      Get.snackbar('Error', 'Gagal memperbarui profil');
+      Get.snackbar('Error', 'Failed to update profile');
       return false;
     } on dio_pkg.DioException catch (e) {
-      Get.snackbar('Error', dioErrorMessage(e, 'Gagal memperbarui profil'));
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to update profile'));
       return false;
     } catch (e) {
       Get.snackbar('Error', e.toString());
@@ -74,7 +74,7 @@ class ProfileController extends GetxController {
       final cropped = await _cropSquare(picked.path);
       if (cropped != null) await _uploadPhoto(cropped);
     } catch (e) {
-      Get.snackbar('Error', 'Gagal membuka galeri: $e');
+      Get.snackbar('Error', 'Failed to open gallery: $e');
     }
   }
 
@@ -88,7 +88,7 @@ class ProfileController extends GetxController {
         compressQuality: 90,
         uiSettings: [
           AndroidUiSettings(
-            toolbarTitle: 'Atur Foto',
+            toolbarTitle: 'Adjust Photo',
             toolbarColor: AppTheme.primary,
             toolbarWidgetColor: const Color(0xFFFFFFFF),
             statusBarColor: AppTheme.primaryDark,
@@ -100,7 +100,7 @@ class ProfileController extends GetxController {
             hideBottomControls: true,
           ),
           IOSUiSettings(
-            title: 'Atur Foto',
+            title: 'Adjust Photo',
             aspectRatioLockEnabled: true,
             aspectRatioPickerButtonHidden: true,
             resetAspectRatioEnabled: false,
@@ -110,7 +110,7 @@ class ProfileController extends GetxController {
       );
       return res?.path;
     } catch (e) {
-      Get.snackbar('Error', 'Gagal memproses foto: $e');
+      Get.snackbar('Error', 'Failed to process photo: $e');
       return null;
     }
   }
@@ -159,27 +159,27 @@ class ProfileController extends GetxController {
         if (enrollOk) {
           Get.snackbar(
             'Success',
-            'Foto profil + verifikasi wajah tersimpan',
+            'Profile photo and face verification saved',
           );
         } else {
           await showAppResultDialog(
             success: false,
-            title: 'Wajah Tidak Terdeteksi',
+            title: 'Face Not Detected',
             message:
-                'Foto profil tersimpan tapi sistem tidak menemukan wajah di '
-                'foto tersebut. Ganti dengan foto:\n'
-                '• Menghadap kamera (frontal)\n'
-                '• Pencahayaan cukup terang\n'
-                '• Hanya satu orang (Anda sendiri)\n\n'
-                'Tanpa wajah terbaca, Anda belum bisa melakukan presensi.',
+                'Your profile photo was saved but the system could not '
+                'find a face in it. Please replace it with a photo that:\n'
+                '• Faces the camera (frontal)\n'
+                '• Has good lighting\n'
+                '• Contains only one person (yourself)\n\n'
+                'Without a readable face, attendance check-in will fail.',
             okLabel: 'OK',
           );
         }
       } else {
-        Get.snackbar('Error', 'Gagal mengunggah foto');
+        Get.snackbar('Error', 'Failed to upload photo');
       }
     } on dio_pkg.DioException catch (e) {
-      Get.snackbar('Error', dioErrorMessage(e, 'Gagal mengunggah foto'));
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to upload photo'));
     } catch (e) {
       Get.snackbar('Error', e.toString());
     } finally {

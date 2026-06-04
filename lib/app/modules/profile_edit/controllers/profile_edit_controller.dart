@@ -42,7 +42,7 @@ class ProfileEditController extends GetxController {
     final newDept = deptCtl.text.trim();
 
     if (newName.isEmpty) {
-      Get.snackbar('Error', 'Nama tidak boleh kosong');
+      Get.snackbar('Error', 'Name cannot be empty');
       return;
     }
 

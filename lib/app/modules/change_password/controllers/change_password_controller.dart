@@ -30,19 +30,19 @@ class ChangePasswordController extends GetxController {
     final confirm = confirmCtl.text;
 
     if (current.isEmpty || next.isEmpty || confirm.isEmpty) {
-      Get.snackbar('Error', 'Semua field wajib diisi');
+      Get.snackbar('Error', 'All fields are required');
       return;
     }
     if (next.length < 8) {
-      Get.snackbar('Error', 'Password baru minimal 8 karakter');
+      Get.snackbar('Error', 'New password must be at least 8 characters');
       return;
     }
     if (next != confirm) {
-      Get.snackbar('Error', 'Konfirmasi password tidak cocok');
+      Get.snackbar('Error', 'Password confirmation does not match');
       return;
     }
     if (next == current) {
-      Get.snackbar('Error', 'Password baru harus berbeda dari yang lama');
+      Get.snackbar('Error', 'New password must differ from the current one');
       return;
     }
 
@@ -55,12 +55,12 @@ class ChangePasswordController extends GetxController {
       );
       if (res.statusCode == 200) {
         Get.back();
-        Get.snackbar('Berhasil', 'Password berhasil diperbarui');
+        Get.snackbar('Success', 'Password updated successfully');
       } else {
-        Get.snackbar('Error', 'Gagal memperbarui password');
+        Get.snackbar('Error', 'Failed to update password');
       }
     } on dio_pkg.DioException catch (e) {
-      Get.snackbar('Error', dioErrorMessage(e, 'Gagal memperbarui password'));
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to update password'));
     } catch (e) {
       Get.snackbar('Error', e.toString());
     } finally {

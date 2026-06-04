@@ -13,7 +13,7 @@ class ReportsListView extends GetView<ReportsController> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Laporan Saya'),
+        title: const Text('My Reports'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -26,7 +26,7 @@ class ReportsListView extends GetView<ReportsController> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Get.toNamed('/reports/create'),
         icon: const Icon(Icons.add),
-        label: const Text('Buat Laporan'),
+        label: const Text('New Report'),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -69,7 +69,7 @@ class ReportsListView extends GetView<ReportsController> {
           itemBuilder: (_, i) {
             final f = filters[i];
             final selected = current == f;
-            final label = f == null ? 'Semua' : reportStatusLabel(f);
+            final label = f == null ? 'All' : reportStatusLabel(f);
             return _filterChip(
               label: label,
               selected: selected,
@@ -291,7 +291,7 @@ class _Empty extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Belum ada laporan',
+            'No reports yet',
             style: TextStyle(
               color: AppTheme.textPrimary,
               fontWeight: FontWeight.w700,
@@ -300,7 +300,7 @@ class _Empty extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Ajukan laporan lapangan pertama Anda',
+            'Submit your first field report',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppTheme.textHint, fontSize: 12),
           ),
@@ -308,7 +308,7 @@ class _Empty extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => Get.toNamed('/reports/create'),
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Buat Laporan'),
+            label: const Text('New Report'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(0, 44),
               padding: const EdgeInsets.symmetric(horizontal: 20),

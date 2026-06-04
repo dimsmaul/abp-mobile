@@ -119,12 +119,12 @@ class PresenceController extends GetxController {
         if (pos.accuracy <= _kPolygonToleranceMeters) break;
       }
     } catch (e) {
-      errorMessage.value = 'Tidak bisa membaca lokasi: $e';
+      errorMessage.value = 'Could not read location: $e';
       state.value = PresenceState.error;
       return;
     }
     if (pos == null) {
-      errorMessage.value = 'Tidak bisa membaca lokasi.';
+      errorMessage.value = 'Could not read location.';
       state.value = PresenceState.error;
       return;
     }
@@ -141,7 +141,7 @@ class PresenceController extends GetxController {
       final items = raw is Map ? raw['items'] : (raw is List ? raw : null);
       offices = items is List ? items : <dynamic>[];
     } on DioException catch (e) {
-      errorMessage.value = dioErrorMessage(e, 'Gagal mengambil daftar kantor');
+      errorMessage.value = dioErrorMessage(e, 'Failed to fetch office list');
       state.value = PresenceState.error;
       return;
     }
@@ -187,7 +187,7 @@ class PresenceController extends GetxController {
     }
 
     if (matched != null) {
-      matchedOfficeName.value = matched['name']?.toString() ?? 'Kantor';
+      matchedOfficeName.value = matched['name']?.toString() ?? 'Office';
       state.value = PresenceState.inZone;
     } else {
       state.value = PresenceState.outOfZone;

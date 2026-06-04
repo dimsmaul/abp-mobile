@@ -11,7 +11,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Ganti Password'),
+        title: const Text('Change Password'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -39,7 +39,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Password baru minimal 8 karakter. Sesi lain akan otomatis logout untuk keamanan.',
+                      'New password must be at least 8 characters. Other active sessions will be signed out for security.',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 12,
@@ -53,7 +53,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
 
             const SizedBox(height: 24),
 
-            const _SectionLabel('Password Saat Ini'),
+            const _SectionLabel('Current Password'),
             const SizedBox(height: 8),
             Obx(() => TextField(
                   controller: controller.currentCtl,
@@ -73,13 +73,13 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                 )),
 
             const SizedBox(height: 16),
-            const _SectionLabel('Password Baru'),
+            const _SectionLabel('New Password'),
             const SizedBox(height: 8),
             Obx(() => TextField(
                   controller: controller.newCtl,
                   obscureText: controller.obscureNew.value,
                   decoration: InputDecoration(
-                    hintText: 'Minimal 8 karakter',
+                    hintText: 'At least 8 characters',
                     prefixIcon: const Icon(Icons.lock_reset, size: 20),
                     suffixIcon: IconButton(
                       icon: Icon(controller.obscureNew.value
@@ -93,13 +93,13 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                 )),
 
             const SizedBox(height: 16),
-            const _SectionLabel('Konfirmasi Password Baru'),
+            const _SectionLabel('Confirm New Password'),
             const SizedBox(height: 8),
             Obx(() => TextField(
                   controller: controller.confirmCtl,
                   obscureText: controller.obscureConfirm.value,
                   decoration: InputDecoration(
-                    hintText: 'Ulangi password baru',
+                    hintText: 'Repeat the new password',
                     prefixIcon: const Icon(Icons.lock_outline, size: 20),
                     suffixIcon: IconButton(
                       icon: Icon(controller.obscureConfirm.value
@@ -118,14 +118,14 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                   onChanged: (v) => controller.revokeOtherSessions.value = v,
                   contentPadding: EdgeInsets.zero,
                   title: const Text(
-                    'Logout dari sesi lain',
+                    'Sign out from other sessions',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   subtitle: const Text(
-                    'Direkomendasikan untuk keamanan.',
+                    'Recommended for security.',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 12,
@@ -150,7 +150,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                             ),
                           )
                         : const Text(
-                            'Ganti Password',
+                            'Change Password',
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                   ),

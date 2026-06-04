@@ -127,7 +127,7 @@ class AttendanceQueueService extends GetxService {
           }
           final status = e.response?.statusCode ?? 0;
           if (status >= 400 && status < 500) {
-            final reason = dioErrorMessage(e, 'Ditolak server');
+            final reason = dioErrorMessage(e, 'Rejected by server');
             await _rejectedBox.add({
               ...item,
               'rejectedAt': DateTime.now().toIso8601String(),
@@ -135,7 +135,7 @@ class AttendanceQueueService extends GetxService {
             });
             await _box.delete(key);
             Get.snackbar(
-              'Presensi ditolak',
+              'Attendance rejected',
               reason,
               duration: const Duration(seconds: 4),
             );
