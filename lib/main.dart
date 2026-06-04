@@ -8,7 +8,7 @@ import 'app/core/theme.dart';
 import 'app/data/controllers/auth_controller.dart';
 import 'app/data/services/api_service.dart';
 import 'app/data/services/attendance_queue_service.dart';
-// import 'app/data/services/notification_service.dart'; // disabled — see below
+import 'app/data/services/notification_service.dart';
 import 'app/routes/app_pages.dart';
 
 List<CameraDescription> cameras = [];
@@ -47,9 +47,9 @@ void main() async {
   Get.put<AuthController>(AuthController(), permanent: true);
   Get.put<AttendanceQueueService>(AttendanceQueueService(), permanent: true);
 
-  // FCM bootstrap — DISABLED to isolate a black-screen-on-launch report
-  // on Xiaomi MIUI. Re-enable once Firebase init is confirmed innocent.
-  // Get.put<NotificationService>(NotificationService(), permanent: true);
+  // FCM bootstrap — internal init is wrapped in try/catch so a missing
+  // google-services.json on a clean clone won't crash the app.
+  Get.put<NotificationService>(NotificationService(), permanent: true);
 
   // Best-effort initial flush in case queued items remain from a previous run.
   // ignore: discarded_futures
