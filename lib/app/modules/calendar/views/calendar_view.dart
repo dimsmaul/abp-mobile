@@ -222,29 +222,33 @@ class _DayCell extends StatelessWidget {
             width: isToday ? 1.5 : 1,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        // Stack so the status dot floats in the top-right corner instead
+        // of pushing the day number down.
+        child: Stack(
           children: [
-            Text(
-              '${date.day}',
-              style: TextStyle(
-                color: isToday ? AppTheme.primary : AppTheme.textPrimary,
-                fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-                fontSize: 14,
+            Center(
+              child: Text(
+                '${date.day}',
+                style: TextStyle(
+                  color: isToday ? AppTheme.primary : AppTheme.textPrimary,
+                  fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
-            const SizedBox(height: 4),
             if (dotColor != null)
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              )
-            else
-              const SizedBox(height: 8),
+              ),
           ],
         ),
       ),
