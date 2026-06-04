@@ -44,6 +44,13 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- Disable Impeller: Xiaomi MIUI Vulkan backend cannot draw the
+             native CameraX PreviewView platform view, leaving the preview
+             black. Falls back to Skia. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+
         <!-- image_cropper / UCrop activity -->
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"

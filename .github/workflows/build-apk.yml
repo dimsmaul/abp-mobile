@@ -1,0 +1,89 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to attach the APK to a Release on tag pushes
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Flutter Android build needs a JDK on PATH.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.6'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Static analysis (advisory)
+        # Soft-fail so a single style nit doesn't block the build artifact.
+        # Replace with `flutter analyze --fatal-warnings` once the codebase
+        # is clean of pre-existing info-level lints.
+        run: flutter analyze || true
+
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      # Surface a short summary so the run page shows the apk size at a
+      # glance instead of having to download the artifact to check.
+      # `github.ref_name` is attacker-controllable (anyone with push access
+      # can craft a branch / tag name) so it must NOT be interpolated into
+      # the run script as a literal — pass it via an env var instead.
+      - name: Inspect APK
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          apk_path=build/app/outputs/flutter-apk/app-debug.apk
+          ls -lh "$apk_path"
+          {
+            echo "## APK build"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Path | $apk_path |"
+            echo "| Size | $(du -h "$apk_path" | cut -f1) |"
+            echo "| Commit | $COMMIT_SHA |"
+            echo "| Branch / Tag | $REF_NAME |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-${{ github.ref_name }}-${{ github.run_number }}
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      # Tagged pushes get a permanent GitHub Release with the APK attached
+      # so beta testers can pull a stable link without rummaging through
+      # workflow runs.
+      - name: Publish GitHub Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-debug.apk
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -68,7 +68,9 @@ class HomeController extends GetxController {
     checkOutTime.value = null;
     for (final it in items) {
       final type = it['type']?.toString();
-      final t = DateTime.tryParse(it['serverTime']?.toString() ?? '');
+      // Server returns UTC ISO ("...Z"); convert to device-local before
+      // surfacing so the HH:mm formatter shows wall-clock time, not UTC.
+      final t = DateTime.tryParse(it['serverTime']?.toString() ?? '')?.toLocal();
       if (t == null) continue;
       if (type == 'check_in') checkInTime.value = t;
       if (type == 'check_out') checkOutTime.value = t;

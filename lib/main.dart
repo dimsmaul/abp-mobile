@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:camera/camera.dart';
 import 'app/core/theme.dart';
 import 'app/data/controllers/auth_controller.dart';
 import 'app/data/services/api_service.dart';

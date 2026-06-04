@@ -11,7 +11,17 @@ class AnnouncementListView extends GetView<AnnouncementController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(title: const Text('Pengumuman')),
+      appBar: AppBar(
+        title: const Text('Pengumuman'),
+        backgroundColor: AppTheme.scaffoldBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: AppTheme.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
       body: Obx(() {
         if (controller.isLoading.value && controller.announcements.isEmpty) {
           return const Center(child: CircularProgressIndicator());

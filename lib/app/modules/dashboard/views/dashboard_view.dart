@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/theme.dart';
 import '../../home/views/home_view.dart';
+import '../../presence/views/presence_view.dart';
 import '../../profile/views/profile_view.dart';
 import '../controllers/dashboard_controller.dart';
 
@@ -13,9 +14,10 @@ class DashboardView extends GetView<DashboardController> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Obx(() => IndexedStack(
-            index: controller.currentIndex.value == 2 ? 1 : controller.currentIndex.value,
+            index: controller.currentIndex.value,
             children: const [
               HomeView(),
+              PresenceView(),
               ProfileView(),
             ],
           )),

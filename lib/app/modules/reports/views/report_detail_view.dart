@@ -12,7 +12,17 @@ class ReportDetailView extends GetView<ReportsController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(title: const Text("Report Detail")),
+      appBar: AppBar(
+        title: const Text('Detail Laporan'),
+        backgroundColor: AppTheme.scaffoldBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        foregroundColor: AppTheme.textPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
+      ),
       body: Obx(() {
         if (controller.isDetailLoading.value && controller.detail.value == null) {
           return const _DetailSkeleton();

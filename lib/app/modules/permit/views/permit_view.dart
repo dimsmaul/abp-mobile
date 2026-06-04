@@ -40,14 +40,21 @@ class PermitView extends GetView<PermitController> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: bc.maxHeight),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                          child: _LeaveBalanceCard(controller: controller),
-                        ),
-                        const Expanded(child: Center(child: _Empty())),
-                      ],
+                    // IntrinsicHeight gives the inner Column a bounded
+                    // vertical constraint inside the scroll view so the
+                    // Expanded child below can lay out instead of throwing
+                    // "RenderFlex … unbounded height" from
+                    // SingleChildScrollView's infinite axis.
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                            child: _LeaveBalanceCard(controller: controller),
+                          ),
+                          const Expanded(child: Center(child: _Empty())),
+                        ],
+                      ),
                     ),
                   ),
                 ),

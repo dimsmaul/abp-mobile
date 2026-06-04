@@ -138,7 +138,7 @@ class ApiService extends GetxService {
 
   // ── Permits ──────────────────────────────────────
   Future<Response> fetchMyPermits({int page = 1, int limit = 20, String? status}) {
-    return _dio.get('/permits/me', queryParameters: {
+    return _dio.get('/mobile/permits/me', queryParameters: {
       'page': page,
       'limit': limit,
       if (status != null) 'status': status,
@@ -146,7 +146,7 @@ class ApiService extends GetxService {
   }
 
   Future<Response> submitPermit(Map<String, dynamic> body) =>
-      _dio.post('/permits', data: body);
+      _dio.post('/mobile/permits', data: body);
 
   // ── Leave Balance ────────────────────────────────
   Future<Response> fetchMyLeaveBalance() =>
@@ -173,6 +173,17 @@ class ApiService extends GetxService {
 
   Future<Response> uploadAvatar(FormData data) =>
       _dio.post('/mobile/me/avatar', data: data);
+
+  Future<Response> enrollFace(List<double> embedding) =>
+      _dio.post('/mobile/me/face', data: {'embedding': embedding});
+
+  Future<Response> fetchOffices({String? regency, int page = 1, int limit = 50}) {
+    return _dio.get('/mobile/offices', queryParameters: {
+      'page': page,
+      'limit': limit,
+      if (regency != null && regency.isNotEmpty) 'regency': regency,
+    });
+  }
 
   Future<Response> changePassword({
     required String currentPassword,
