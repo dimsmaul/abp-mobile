@@ -44,4 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+.env*-firebase-adminsdk-*.json
+
+# Local env (BASE_URL etc)
 .env

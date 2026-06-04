@@ -15,16 +15,13 @@ class DashboardView extends GetView<DashboardController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Obx(() => IndexedStack(
-            index: controller.currentIndex.value,
-            children: const [
-              HomeView(),
-              CalendarView(),
-              PresenceView(),
-              PermitView(),
-              ProfileView(),
-            ],
-          )),
+      // IndexedStack mounts every child up-front, so post-login the dashboard
+      // built five Scaffolds + their controllers' onInit fetches at once and
+      // blew past Choreographer's frame budget on MIUI (Skipped 54 frames →
+      // ANR). Building only the active tab keeps the first frame cheap; the
+      // controllers are lazyPut singletons in DashboardBinding so swapping
+      // tabs doesn't lose state.
+      body: Obx(() => _buildTab(controller.currentIndex.value)),
       floatingActionButton: FloatingActionButton(
         onPressed: () => controller.changePage(2),
         shape: const CircleBorder(),
@@ -76,6 +73,23 @@ class DashboardView extends GetView<DashboardController> {
         ),
       ),
     );
+  }
+
+  Widget _buildTab(int index) {
+    switch (index) {
+      case 0:
+        return const HomeView();
+      case 1:
+        return const CalendarView();
+      case 2:
+        return const PresenceView();
+      case 3:
+        return const PermitView();
+      case 4:
+        return const ProfileView();
+      default:
+        return const HomeView();
+    }
   }
 
   Widget _buildNavItem({

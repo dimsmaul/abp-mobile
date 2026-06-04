@@ -14,6 +14,26 @@ class PermitController extends GetxController {
   final isLoading = false.obs;
   final isSubmitting = false.obs;
 
+  // ── Tab category sets ───────────────────────────────────
+  // Leave tab folds the three leave-flavored backend categories so legacy
+  // 'sick' / 'permit' rows still surface alongside 'leave'.
+  static const Set<String> leaveCategories = {'leave', 'sick', 'permit'};
+  static const Set<String> overtimeCategories = {'overtime'};
+  static const Set<String> reimburseCategories = {'reimburse'};
+  static const Set<String> loanCategories = {'loan'};
+
+  /// Filter the loaded permits by a category set (used per tab).
+  List<Map> permitsByCategory(Set<String> cats) {
+    return permits
+        .where((p) => cats.contains(p['type']?.toString()))
+        .toList(growable: false);
+  }
+
+  /// Pre-set the form category before opening the bottom sheet from a FAB.
+  void setActiveCategory(String cat) {
+    type.value = cat;
+  }
+
   // ── Form fields ─────────────────────────────────────────
   // Default 'leave' per multi-type spec (was 'sick' before).
   final type = 'leave'.obs;
