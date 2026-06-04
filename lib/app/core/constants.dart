@@ -18,19 +18,29 @@ const List<String> kReportStatuses = [
 ];
 
 // ── Permit Types ────────────────────────────────────────────
-const List<String> kPermitTypes = ['sick', 'leave', 'permit'];
+// 6 categories supported by the mobile pengajuan flow. Backend permits
+// endpoint accepts all of these; UI branches on the value to render the
+// matching form fields.
+const List<String> kPermitTypes = [
+  'leave',
+  'sick',
+  'permit',
+  'overtime',
+  'reimburse',
+  'loan',
+];
 
-// ── Indonesian Labels ───────────────────────────────────────
+// ── English Labels ──────────────────────────────────────────
 String reportCategoryLabel(String s) {
   switch (s) {
     case 'weather':
-      return 'Cuaca';
+      return 'Weather';
     case 'technical':
-      return 'Teknis';
+      return 'Technical';
     case 'progress':
-      return 'Progres';
+      return 'Progress';
     case 'other':
-      return 'Lainnya';
+      return 'Other';
     default:
       return s;
   }
@@ -39,13 +49,13 @@ String reportCategoryLabel(String s) {
 String reportStatusLabel(String s) {
   switch (s) {
     case 'pending':
-      return 'Menunggu';
+      return 'Pending';
     case 'approved':
-      return 'Disetujui';
+      return 'Approved';
     case 'rejected':
-      return 'Ditolak';
+      return 'Rejected';
     case 'need_revision':
-      return 'Perlu Revisi';
+      return 'Needs Revision';
     default:
       return s;
   }
@@ -69,11 +79,11 @@ Color reportStatusColor(String s) {
 String permitStatusLabel(String s) {
   switch (s) {
     case 'pending':
-      return 'Menunggu';
+      return 'Pending';
     case 'approved':
-      return 'Disetujui';
+      return 'Approved';
     case 'rejected':
-      return 'Ditolak';
+      return 'Rejected';
     default:
       return s;
   }
@@ -95,12 +105,56 @@ Color permitStatusColor(String s) {
 String permitTypeLabel(String s) {
   switch (s) {
     case 'sick':
-      return 'Sakit';
+      return 'Sick Leave';
     case 'leave':
-      return 'Cuti';
+      return 'Annual Leave';
     case 'permit':
-      return 'Izin';
+      return 'Personal Leave';
+    case 'overtime':
+      return 'Overtime';
+    case 'reimburse':
+      return 'Reimbursement';
+    case 'loan':
+      return 'Loan Request';
     default:
       return s;
+  }
+}
+
+IconData permitTypeIcon(String s) {
+  switch (s) {
+    case 'sick':
+      return Icons.favorite_outline;
+    case 'leave':
+      return Icons.beach_access_outlined;
+    case 'permit':
+      return Icons.event_note_outlined;
+    case 'overtime':
+      return Icons.timer_outlined;
+    case 'reimburse':
+      return Icons.receipt_long_outlined;
+    case 'loan':
+      return Icons.account_balance_wallet_outlined;
+    default:
+      return Icons.assignment_outlined;
+  }
+}
+
+Color permitTypeColor(String s) {
+  switch (s) {
+    case 'sick':
+      return AppTheme.danger;
+    case 'leave':
+      return AppTheme.primary;
+    case 'permit':
+      return AppTheme.warning;
+    case 'overtime':
+      return const Color(0xFF8B5CF6); // purple
+    case 'reimburse':
+      return AppTheme.success;
+    case 'loan':
+      return const Color(0xFF0EA5E9); // sky
+    default:
+      return AppTheme.textHint;
   }
 }
