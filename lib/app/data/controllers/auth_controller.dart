@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class AuthController extends GetxController {
   static AuthController get to => Get.find();
@@ -88,6 +89,13 @@ class AuthController extends GetxController {
 
     user.value = api.currentUser;
     isAuthenticated.value = api.isLoggedIn;
+
+    // Push the cached FCM token to BE now that we have a session. Fire-
+    // and-forget — failure here shouldn't block the login flow.
+    if (Get.isRegistered<NotificationService>()) {
+      // ignore: discarded_futures
+      Get.find<NotificationService>().registerCurrentToken();
+    }
   }
 
   Future<void> signOut() async {
