@@ -28,21 +28,29 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.mobile.app.mobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Default label — gets overridden per build type below.
+        manifestPlaceholders["appLabel"] = "FieldTrack"
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["appLabel"] = "FieldTrack"
+        }
+        getByName("debug") {
+            // Suffix the appId so a debug build installs alongside a release
+            // build instead of overwriting it. Pair with a distinct label so
+            // the launcher icon is easy to tell apart.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["appLabel"] = "FieldTrack Debug"
         }
     }
 }
