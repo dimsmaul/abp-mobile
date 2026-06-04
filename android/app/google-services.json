@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "574284283231",
+    "project_id": "fieldtrack-59cc4",
+    "storage_bucket": "fieldtrack-59cc4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:574284283231:android:36e3ede1b76e2fce9a4aea",
+        "android_client_info": {
+          "package_name": "com.mobile.app.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlUFsMxjaXqq_ncsAkzgxD3_pZSFcTluE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:574284283231:android:491de55bcbb7dc9e9a4aea",
+        "android_client_info": {
+          "package_name": "com.mobile.app.mobile.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlUFsMxjaXqq_ncsAkzgxD3_pZSFcTluE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,9 +5,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Apply google-services only when the config file is present so a clone
-// without google-services.json still builds. Drop the JSON into
-// `mobile/android/app/google-services.json` to enable FCM.
+// Apply google-services only when the config file is present so a clean
+// clone still builds. The file must include client entries for both the
+// release applicationId (com.mobile.app.mobile) and the debug variant
+// (com.mobile.app.mobile.debug) — Firebase Console "Add app" lets you
+// register both under one project, then the downloaded google-services.json
+// bundles both clients.
 val googleServicesJson = file("google-services.json")
 if (googleServicesJson.exists()) {
     apply(plugin = "com.google.gms.google-services")
