@@ -34,6 +34,25 @@ jobs:
           channel: stable
           cache: true
 
+      # Tag pushes are the source of truth for the release version. We
+      # rewrite pubspec.yaml's `version:` line in-place so the APK reports
+      # the correct versionName (and a monotonic versionCode from the
+      # run number). Untagged pushes keep whatever is in pubspec.
+      - name: Sync version from git tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          SEMVER="${REF_NAME#v}"
+          NEW_VERSION="${SEMVER}+${RUN_NUMBER}"
+          echo "Setting pubspec version to ${NEW_VERSION}"
+          # Match the first `version:` line under the top-level (no
+          # leading whitespace) and replace it. Keeps comments untouched.
+          sed -i.bak -E "s/^version: .*/version: ${NEW_VERSION}/" pubspec.yaml
+          rm pubspec.yaml.bak
+          grep '^version:' pubspec.yaml
+
       - name: Resolve dependencies
         run: flutter pub get
 
@@ -46,6 +65,22 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
+      # Rename APK so artifact + release filenames advertise the version
+      # number instead of the generic `app-debug.apk`.
+      - name: Rename APK with version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          mkdir -p dist
+          if [[ "$REF_NAME" == v* ]]; then
+            name="fieldtrack-${REF_NAME}.apk"
+          else
+            name="fieldtrack-${REF_NAME}-${GITHUB_RUN_NUMBER}.apk"
+          fi
+          cp build/app/outputs/flutter-apk/app-debug.apk "dist/${name}"
+          echo "APK_NAME=${name}" >> "$GITHUB_ENV"
+          ls -lh dist/
+
       # Surface a short summary so the run page shows the apk size at a
       # glance instead of having to download the artifact to check.
       # `github.ref_name` is attacker-controllable (anyone with push access
@@ -56,14 +91,13 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          apk_path=build/app/outputs/flutter-apk/app-debug.apk
-          ls -lh "$apk_path"
+          apk_path="dist/${APK_NAME}"
           {
             echo "## APK build"
             echo ""
             echo "| Field | Value |"
             echo "|---|---|"
-            echo "| Path | $apk_path |"
+            echo "| File | ${APK_NAME} |"
             echo "| Size | $(du -h "$apk_path" | cut -f1) |"
             echo "| Commit | $COMMIT_SHA |"
             echo "| Branch / Tag | $REF_NAME |"
@@ -72,8 +106,8 @@ jobs:
       - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-${{ github.ref_name }}-${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: ${{ env.APK_NAME }}
+          path: dist/${{ env.APK_NAME }}
           retention-days: 30
           if-no-files-found: error
 
@@ -84,6 +118,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/app/outputs/flutter-apk/app-debug.apk
+          name: ${{ github.ref_name }}
+          files: dist/${{ env.APK_NAME }}
           generate_release_notes: true
           fail_on_unmatched_files: true
