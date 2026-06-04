@@ -66,8 +66,8 @@ class ApiService extends GetxService {
       // Defer the snackbar so it shows after the navigation animation.
       Future.delayed(const Duration(milliseconds: 250), () {
         Get.snackbar(
-          'Sesi Berakhir',
-          'Silakan masuk kembali untuk melanjutkan.',
+          'Session Expired',
+          'Please sign in again to continue.',
           snackPosition: SnackPosition.BOTTOM,
         );
       });
@@ -120,6 +120,14 @@ class ApiService extends GetxService {
     });
   }
 
+  /// Calendar summary for a given month. [month] is a "YYYY-MM" string.
+  /// Response shape: `{ data: [{ date, status, checkIn, checkOut }] }`
+  Future<Response> fetchCalendar({required String month}) {
+    return _dio.get('/mobile/attendances/calendar', queryParameters: {
+      'month': month,
+    });
+  }
+
   // ── Reports ──────────────────────────────────────
   // Mobile uses /mobile/reports* (employee scope, ownership-checked on BE).
   Future<Response> createReport(FormData data) =>
@@ -145,7 +153,11 @@ class ApiService extends GetxService {
     });
   }
 
-  Future<Response> submitPermit(Map<String, dynamic> body) =>
+  /// Permit submission. [body] is either a plain `Map<String, dynamic>` for
+  /// types without an attachment, or a `FormData` for types that include a
+  /// receipt photo (e.g. reimbursement). The Dio interceptor leaves the
+  /// `Content-Type` alone when the payload is `FormData`.
+  Future<Response> submitPermit(dynamic body) =>
       _dio.post('/mobile/permits', data: body);
 
   // ── Leave Balance ────────────────────────────────
@@ -184,6 +196,17 @@ class ApiService extends GetxService {
       if (regency != null && regency.isNotEmpty) 'regency': regency,
     });
   }
+
+  /// Register an FCM device token so the BE can target this device for
+  /// push notifications. Best-effort — caller swallows errors.
+  Future<Response> registerDevice({
+    required String fcmToken,
+    String platform = 'android',
+  }) =>
+      _dio.post('/mobile/me/device', data: {
+        'fcmToken': fcmToken,
+        'platform': platform,
+      });
 
   Future<Response> changePassword({
     required String currentPassword,
@@ -234,9 +257,9 @@ String dioErrorMessage(DioException e, [String fallback = 'Request failed']) {
     case DioExceptionType.connectionTimeout:
     case DioExceptionType.sendTimeout:
     case DioExceptionType.receiveTimeout:
-      return 'Koneksi timeout. Cek jaringan dan coba lagi.';
+      return 'Connection timed out. Check your network and try again.';
     case DioExceptionType.connectionError:
-      return 'Tidak bisa terhubung ke server. Cek koneksi internet Anda.';
+      return 'Cannot connect to the server. Please check your internet connection.';
     default:
       break;
   }

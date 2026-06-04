@@ -59,6 +59,11 @@ dependencies:
   image_picker: ^1.1.2
   image_cropper: ^9.1.0
   permission_handler: ^11.3.1
+  # FCM push. firebase_core 4.x + firebase_messaging 16.x line up with
+  # Flutter 3.38. Init is gated on google-services.json being present so a
+  # clean clone without the config still builds and runs.
+  firebase_core: ^4.1.1
+  firebase_messaging: ^16.0.2
 
 dev_dependencies:
   flutter_test:

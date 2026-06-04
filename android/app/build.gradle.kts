@@ -5,6 +5,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Apply google-services only when the config file is present so a clone
+// without google-services.json still builds. Drop the JSON into
+// `mobile/android/app/google-services.json` to enable FCM.
+val googleServicesJson = file("google-services.json")
+if (googleServicesJson.exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.mobile.app.mobile"
     compileSdk = flutter.compileSdkVersion
