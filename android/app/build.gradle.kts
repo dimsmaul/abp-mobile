@@ -5,11 +5,20 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Apply google-services only when the config file is present so a clone
-// without google-services.json still builds. Drop the JSON into
-// `mobile/android/app/google-services.json` to enable FCM.
+// Apply google-services only when:
+//   1. google-services.json exists (clean clones still build)
+//   2. The build is for a variant whose applicationId matches an entry in
+//      that JSON — by default the release applicationId. Debug builds
+//      use a `.debug` applicationIdSuffix so the plugin fails the build
+//      with "No matching client found" unless the debug variant is also
+//      registered in Firebase Console. We skip the plugin entirely on
+//      debug to keep the dev loop fast; FCM only works on release.
 val googleServicesJson = file("google-services.json")
-if (googleServicesJson.exists()) {
+val isReleaseBuild = gradle.startParameter.taskNames.any { name ->
+    val n = name.lowercase()
+    n.contains("release") || n.contains("bundlerelease") || n.contains("assemblerelease")
+}
+if (googleServicesJson.exists() && isReleaseBuild) {
     apply(plugin = "com.google.gms.google-services")
 }
 
