@@ -12,7 +12,7 @@ class ReportCreateView extends GetView<ReportsController> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Buat Laporan'),
+        title: const Text('New Report'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -94,7 +94,7 @@ class ReportCreateView extends GetView<ReportsController> {
                     Icon(Icons.add_a_photo_outlined,
                         size: 48, color: AppTheme.primary),
                     SizedBox(height: 8),
-                    Text("Tap to take photo",
+                    Text('Tap to take photo',
                         style: TextStyle(
                             color: AppTheme.textSecondary,
                             fontWeight: FontWeight.w500)),

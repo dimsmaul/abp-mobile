@@ -43,7 +43,7 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Riwayat Presensi'),
+        title: const Text('Attendance History'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -103,7 +103,7 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
                             ),
                             SizedBox(width: 10),
                             Text(
-                              'Memuat lebih banyak…',
+                              'Loading more…',
                               style: TextStyle(
                                 color: AppTheme.textHint,
                                 fontSize: 12,
@@ -118,7 +118,7 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: Center(
                         child: Text(
-                          'Tidak ada riwayat lagi',
+                          'No more history',
                           style: TextStyle(
                             color: AppTheme.textHint,
                             fontSize: 12,
@@ -241,7 +241,7 @@ class _AttendanceHistoryViewState extends State<AttendanceHistoryView> {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        inZone ? 'Dalam zona' : 'Luar zona',
+        inZone ? 'In zone' : 'Out of zone',
         style: TextStyle(
           color: c,
           fontSize: 10,
@@ -273,7 +273,7 @@ class _Empty extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Belum ada presensi',
+            'No attendance yet',
             style: TextStyle(
               color: AppTheme.textPrimary,
               fontWeight: FontWeight.w700,
@@ -282,7 +282,7 @@ class _Empty extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Check-in lewat tab Camera untuk memulai',
+            'Check in via the Presence tab to start',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppTheme.textHint, fontSize: 12),
           ),

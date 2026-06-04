@@ -84,12 +84,19 @@ class HomeController extends GetxController {
     // If embedded in DashboardView with bottom nav, switch the tab instead
     // of pushing a new route. Falls back to plain navigation otherwise.
     if (Get.isRegistered<DashboardController>()) {
-      Get.find<DashboardController>().changePage(2);
+      Get.find<DashboardController>().changePage(4);
       return;
     }
     Get.toNamed('/profile');
   }
-  void goToPermit() => Get.toNamed('/permit');
+  void goToPermit() {
+    // Pengajuan / Requests is now a dashboard tab. Switch instead of push.
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().changePage(3);
+      return;
+    }
+    Get.toNamed('/permit');
+  }
   void goToAnnouncements() => Get.toNamed('/announcements');
   void openAnnouncementDetail(String id) =>
       Get.toNamed('/announcements/detail', arguments: id);

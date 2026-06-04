@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants.dart';
 import '../../../core/theme.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
 import '../controllers/permit_controller.dart';
 
 class PermitView extends GetView<PermitController> {
@@ -10,18 +12,23 @@ class PermitView extends GetView<PermitController> {
 
   @override
   Widget build(BuildContext context) {
+    final embeddedInDashboard = Get.isRegistered<DashboardController>();
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Pengajuan Saya'),
+        title: const Text('My Requests'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
         foregroundColor: AppTheme.textPrimary,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
+        // No back button when shown as a dashboard tab.
+        leading: embeddedInDashboard
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Get.back(),
+              ),
+        automaticallyImplyLeading: !embeddedInDashboard,
       ),
       body: SafeArea(
         child: Obx(() {
@@ -40,11 +47,6 @@ class PermitView extends GetView<PermitController> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: bc.maxHeight),
-                    // IntrinsicHeight gives the inner Column a bounded
-                    // vertical constraint inside the scroll view so the
-                    // Expanded child below can lay out instead of throwing
-                    // "RenderFlex … unbounded height" from
-                    // SingleChildScrollView's infinite axis.
                     child: IntrinsicHeight(
                       child: Column(
                         children: [
@@ -116,8 +118,6 @@ class _LeaveBalanceCard extends StatelessWidget {
       final total = (balance['totalDays'] as num?)?.toDouble() ?? 0;
       final year = balance['year']?.toString() ?? '';
 
-      // Traffic-light coloring keyed to remaining cuti so the employee gets
-      // a quick at-a-glance signal: > 3 safe, 1-3 caution, 0 blocked.
       Color color;
       if (remaining <= 0) {
         color = Colors.redAccent;
@@ -151,7 +151,7 @@ class _LeaveBalanceCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Sisa cuti tahun $year',
+                    'Remaining leave for $year',
                     style: const TextStyle(
                       color: AppTheme.textHint,
                       fontSize: 12,
@@ -159,7 +159,7 @@ class _LeaveBalanceCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${remaining.toStringAsFixed(remaining.truncateToDouble() == remaining ? 0 : 1)} dari ${total.toStringAsFixed(total.truncateToDouble() == total ? 0 : 1)} hari',
+                    '${remaining.toStringAsFixed(remaining.truncateToDouble() == remaining ? 0 : 1)} of ${total.toStringAsFixed(total.truncateToDouble() == total ? 0 : 1)} days',
                     style: TextStyle(
                       color: color,
                       fontSize: 16,
@@ -190,12 +190,19 @@ class _PermitCard extends StatelessWidget {
 
     final startDate = DateTime.tryParse(permit['startDate']?.toString() ?? '');
     final endDate = DateTime.tryParse(permit['endDate']?.toString() ?? '');
-    final rangeStr = (startDate != null && endDate != null)
-        ? '${DateFormat('dd MMM').format(startDate)} – ${DateFormat('dd MMM yyyy').format(endDate)}'
-        : '-';
+    final singleDate = DateTime.tryParse(permit['date']?.toString() ?? '');
+    String rangeStr;
+    if (startDate != null && endDate != null) {
+      rangeStr =
+          '${DateFormat('dd MMM').format(startDate)} – ${DateFormat('dd MMM yyyy').format(endDate)}';
+    } else if (singleDate != null) {
+      rangeStr = DateFormat('dd MMM yyyy').format(singleDate);
+    } else {
+      rangeStr = '-';
+    }
 
-    final typeIcon = _typeIcon(typeStr);
-    final typeColor = _typeColor(typeStr);
+    final typeIcon = permitTypeIcon(typeStr);
+    final typeColor = permitTypeColor(typeStr);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -226,13 +233,23 @@ class _PermitCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        permitTypeLabel(typeStr),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: AppTheme.textPrimary,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              permitTypeLabel(typeStr),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          _typeChip(typeStr, typeColor),
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Row(
@@ -281,7 +298,7 @@ class _PermitCard extends StatelessWidget {
                       size: 12, color: AppTheme.textHint),
                   SizedBox(width: 4),
                   Text(
-                    'Lampiran terlampir',
+                    'Attachment included',
                     style: TextStyle(
                       color: AppTheme.textHint,
                       fontSize: 11,
@@ -297,30 +314,23 @@ class _PermitCard extends StatelessWidget {
     );
   }
 
-  IconData _typeIcon(String type) {
-    switch (type) {
-      case 'sick':
-        return Icons.favorite_outline;
-      case 'leave':
-        return Icons.beach_access_outlined;
-      case 'permit':
-        return Icons.event_note_outlined;
-      default:
-        return Icons.assignment_outlined;
-    }
-  }
-
-  Color _typeColor(String type) {
-    switch (type) {
-      case 'sick':
-        return AppTheme.danger;
-      case 'leave':
-        return AppTheme.primary;
-      case 'permit':
-        return AppTheme.warning;
-      default:
-        return AppTheme.textHint;
-    }
+  Widget _typeChip(String type, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        type.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
   }
 
   Widget _statusBadge(String status) {
@@ -366,7 +376,7 @@ class _Empty extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Belum ada pengajuan',
+            'No requests yet',
             style: TextStyle(
               color: AppTheme.textPrimary,
               fontWeight: FontWeight.w700,
@@ -375,7 +385,7 @@ class _Empty extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Ketuk tombol + untuk mengajukan izin baru',
+            'Tap the + button to submit a new request',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppTheme.textHint, fontSize: 12),
           ),
@@ -467,55 +477,35 @@ class _PermitFormSheet extends StatelessWidget {
                 ),
               ),
             ),
-            Text("Ajukan Izin",
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 24),
+            Text(
+              'New Request',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
 
-            const _FieldLabel('Jenis Izin'),
+            // ── Floating category picker (6 segments). Scrollable when narrow.
+            const _FieldLabel('Category'),
             const SizedBox(height: 8),
-            Obx(() => DropdownButtonFormField<String>(
-                  initialValue: controller.type.value,
-                  dropdownColor: Colors.white,
-                  style: const TextStyle(color: AppTheme.textPrimary),
-                  decoration: const InputDecoration(
-                    hintText: 'Pilih jenis',
-                    prefixIcon: Icon(Icons.assignment_outlined, size: 20),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'sick', child: Text('Sakit')),
-                    DropdownMenuItem(
-                        value: 'leave', child: Text('Cuti Tahunan')),
-                    DropdownMenuItem(
-                        value: 'permit', child: Text('Izin Khusus')),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) controller.type.value = val;
-                  },
-                )),
+            _CategoryPicker(controller: controller),
+            const SizedBox(height: 20),
+
+            // Type-specific form fields rebuild as `type` changes.
+            Obx(() => _typeFields(context, controller.type.value)),
 
             const SizedBox(height: 16),
-            const _FieldLabel('Deskripsi / Alasan'),
+            const _FieldLabel('Description / Reason'),
             const SizedBox(height: 8),
             TextField(
               controller: controller.descriptionController,
               maxLines: 3,
               style: const TextStyle(color: AppTheme.textPrimary),
               decoration: const InputDecoration(
-                hintText: 'Minimal 10 karakter, jelaskan alasan singkat',
+                hintText: 'At least 10 characters — explain briefly',
                 prefixIcon: Padding(
                   padding: EdgeInsets.only(bottom: 36),
                   child: Icon(Icons.notes, size: 20),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildDatePicker(context, isStart: true)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildDatePicker(context, isStart: false)),
-              ],
             ),
 
             const SizedBox(height: 28),
@@ -531,7 +521,7 @@ class _PermitFormSheet extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
-                      : const Text('Ajukan',
+                      : const Text('Submit',
                           style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               );
@@ -543,14 +533,107 @@ class _PermitFormSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildDatePicker(BuildContext context, {required bool isStart}) {
+  /// Per-type form. We branch on the active type so each request kind only
+  /// shows its own relevant inputs (date range vs single date, hours, amount,
+  /// tenor, receipt, etc.).
+  Widget _typeFields(BuildContext context, String type) {
+    switch (type) {
+      case 'leave':
+      case 'sick':
+      case 'permit':
+        return Row(
+          children: [
+            Expanded(child: _datePicker(context, isStart: true)),
+            const SizedBox(width: 12),
+            Expanded(child: _datePicker(context, isStart: false)),
+          ],
+        );
+      case 'overtime':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _singleDatePicker(context),
+            const SizedBox(height: 16),
+            const _FieldLabel('Hours'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller.overtimeHoursController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              ],
+              decoration: const InputDecoration(
+                hintText: 'e.g. 2.5',
+                prefixIcon: Icon(Icons.timer_outlined, size: 20),
+              ),
+            ),
+          ],
+        );
+      case 'reimburse':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _singleDatePicker(context),
+            const SizedBox(height: 16),
+            const _FieldLabel('Amount (IDR)'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller.amountController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [_RupiahFormatter()],
+              decoration: const InputDecoration(
+                hintText: 'Rp 0',
+                prefixIcon: Icon(Icons.payments_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const _FieldLabel('Receipt photo'),
+            const SizedBox(height: 8),
+            _ReceiptPicker(controller: controller),
+          ],
+        );
+      case 'loan':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _FieldLabel('Amount (IDR)'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller.amountController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [_RupiahFormatter()],
+              decoration: const InputDecoration(
+                hintText: 'Rp 0',
+                prefixIcon: Icon(Icons.payments_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const _FieldLabel('Tenor (months)'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: controller.tenorMonthsController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                hintText: 'e.g. 12',
+                prefixIcon: Icon(Icons.event_repeat_outlined, size: 20),
+              ),
+            ),
+          ],
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _datePicker(BuildContext context, {required bool isStart}) {
     return Obx(() {
       final date =
           isStart ? controller.startDate.value : controller.endDate.value;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _FieldLabel(isStart ? 'Tanggal Mulai' : 'Tanggal Selesai'),
+          _FieldLabel(isStart ? 'Start date' : 'End date'),
           const SizedBox(height: 8),
           InkWell(
             onTap: () => isStart
@@ -563,7 +646,7 @@ class _PermitFormSheet extends StatelessWidget {
                 hintText: '—',
               ),
               child: Text(
-                date != null ? DateFormat('dd MMM yyyy').format(date) : 'Pilih',
+                date != null ? DateFormat('dd MMM yyyy').format(date) : 'Pick',
                 style: TextStyle(
                   color: date != null
                       ? AppTheme.textPrimary
@@ -573,6 +656,174 @@ class _PermitFormSheet extends StatelessWidget {
             ),
           ),
         ],
+      );
+    });
+  }
+
+  Widget _singleDatePicker(BuildContext context) {
+    return Obx(() {
+      final date = controller.eventDate.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _FieldLabel('Date'),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => controller.selectEventDate(context),
+            borderRadius: BorderRadius.circular(12),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.calendar_today_outlined, size: 18),
+                hintText: '—',
+              ),
+              child: Text(
+                date != null ? DateFormat('dd MMM yyyy').format(date) : 'Pick',
+                style: TextStyle(
+                  color: date != null
+                      ? AppTheme.textPrimary
+                      : AppTheme.textHint,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+class _CategoryPicker extends StatelessWidget {
+  final PermitController controller;
+  const _CategoryPicker({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final current = controller.type.value;
+      return SizedBox(
+        height: 76,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: kPermitTypes.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final t = kPermitTypes[i];
+            final selected = current == t;
+            final color = permitTypeColor(t);
+            return InkWell(
+              onTap: () => controller.type.value = t,
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 140),
+                width: 84,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? color.withValues(alpha: 0.10)
+                      : AppTheme.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected ? color : AppTheme.cardBorder,
+                    width: selected ? 1.5 : 1,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(permitTypeIcon(t), color: color, size: 22),
+                    const SizedBox(height: 4),
+                    Text(
+                      permitTypeLabel(t),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected ? color : AppTheme.textPrimary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    });
+  }
+}
+
+class _ReceiptPicker extends StatelessWidget {
+  final PermitController controller;
+  const _ReceiptPicker({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final img = controller.receiptImage.value;
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (img != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  img,
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              )
+            else
+              Container(
+                height: 100,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.scaffoldBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Icon(Icons.receipt_long_outlined,
+                      color: AppTheme.textHint, size: 32),
+                ),
+              ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: controller.pickReceiptFromCamera,
+                    icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                    label: const Text('Camera'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: controller.pickReceiptFromGallery,
+                    icon: const Icon(Icons.photo_library_outlined, size: 18),
+                    label: const Text('Gallery'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 40),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       );
     });
   }
@@ -591,6 +842,29 @@ class _FieldLabel extends StatelessWidget {
         fontWeight: FontWeight.w600,
         letterSpacing: 0.4,
       ),
+    );
+  }
+}
+
+/// Format input as "Rp 1.000.000" while typing. Stores digits only when
+/// the parent controller reads .text.
+class _RupiahFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) {
+      return const TextEditingValue(text: '');
+    }
+    final number = int.tryParse(digits);
+    if (number == null) return oldValue;
+    final formatted = NumberFormat.decimalPattern('id_ID').format(number);
+    final out = 'Rp $formatted';
+    return TextEditingValue(
+      text: out,
+      selection: TextSelection.collapsed(offset: out.length),
     );
   }
 }

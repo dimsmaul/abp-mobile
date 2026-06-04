@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart' hide Response;
+import 'package:get/get.dart' hide Response, FormData, MultipartFile;
+import 'package:image_picker/image_picker.dart';
+
 import '../../../data/services/api_service.dart';
 
 class PermitController extends GetxController {
@@ -10,11 +14,21 @@ class PermitController extends GetxController {
   final isLoading = false.obs;
   final isSubmitting = false.obs;
 
-  // Form fields
-  final type = 'sick'.obs;
+  // ── Form fields ─────────────────────────────────────────
+  // Default 'leave' per multi-type spec (was 'sick' before).
+  final type = 'leave'.obs;
   final descriptionController = TextEditingController();
   final startDate = Rxn<DateTime>();
   final endDate = Rxn<DateTime>();
+
+  // Type-specific fields. Only the relevant fields per type are read at
+  // submit time; the rest are ignored so reusing the same controller for
+  // different categories doesn't bleed data.
+  final overtimeHoursController = TextEditingController();
+  final amountController = TextEditingController(); // reimburse + loan (IDR)
+  final tenorMonthsController = TextEditingController(); // loan
+  final receiptImage = Rxn<File>();
+  final eventDate = Rxn<DateTime>(); // overtime + reimburse single-date
 
   // Leave balance snapshot for the current year. Populated best-effort on
   // init so the UI can show remaining cuti and the form can preflight a
@@ -66,7 +80,7 @@ class PermitController extends GetxController {
     final remaining = (balance['remainingDays'] as num?)?.toDouble() ?? 0;
     final requested = countWorkingDays(startDate.value!, endDate.value!);
     if (requested > remaining) {
-      return 'Sisa cuti $remaining hari, butuh $requested hari kerja';
+      return 'Remaining leave $remaining days, requested $requested working days';
     }
     return null;
   }
@@ -83,57 +97,182 @@ class PermitController extends GetxController {
         permits.assignAll(List<Map>.from((list as List?) ?? const []));
       }
     } on DioException catch (e) {
-      Get.snackbar("Error", dioErrorMessage(e, 'Failed to fetch permits'));
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to fetch requests'));
     } finally {
       isLoading.value = false;
     }
   }
 
+  /// True when the active type uses a date range (start + end).
+  bool get _usesDateRange =>
+      type.value == 'leave' || type.value == 'sick' || type.value == 'permit';
+
+  /// True when the active type uses a single event date.
+  bool get _usesSingleDate =>
+      type.value == 'overtime' || type.value == 'reimburse';
+
   Future<void> submitPermit() async {
-    if (descriptionController.text.trim().isEmpty ||
-        startDate.value == null ||
-        endDate.value == null) {
-      Get.snackbar("Error", "Please fill all fields");
+    final desc = descriptionController.text.trim();
+    if (desc.isEmpty) {
+      Get.snackbar('Error', 'Please fill in the description');
+      return;
+    }
+    if (desc.length < 10) {
+      Get.snackbar('Error', 'Description must be at least 10 characters');
       return;
     }
 
-    if (descriptionController.text.trim().length < 10) {
-      Get.snackbar("Error", "Description must be at least 10 characters");
-      return;
+    // Per-type validation.
+    if (_usesDateRange) {
+      if (startDate.value == null || endDate.value == null) {
+        Get.snackbar('Error', 'Please pick both start and end dates');
+        return;
+      }
+    } else if (_usesSingleDate) {
+      if (eventDate.value == null) {
+        Get.snackbar('Error', 'Please pick a date');
+        return;
+      }
+    }
+
+    if (type.value == 'overtime') {
+      final hours = double.tryParse(overtimeHoursController.text.trim());
+      if (hours == null || hours <= 0) {
+        Get.snackbar('Error', 'Please enter overtime hours');
+        return;
+      }
+    }
+    if (type.value == 'reimburse') {
+      final amount = _parseAmount(amountController.text);
+      if (amount == null || amount <= 0) {
+        Get.snackbar('Error', 'Please enter the reimbursement amount');
+        return;
+      }
+    }
+    if (type.value == 'loan') {
+      final amount = _parseAmount(amountController.text);
+      if (amount == null || amount <= 0) {
+        Get.snackbar('Error', 'Please enter the loan amount');
+        return;
+      }
+      final tenor = int.tryParse(tenorMonthsController.text.trim());
+      if (tenor == null || tenor <= 0) {
+        Get.snackbar('Error', 'Please enter the loan tenor (months)');
+        return;
+      }
     }
 
     final balanceError = validateLeaveBalance();
     if (balanceError != null) {
-      Get.snackbar("Saldo cuti tidak cukup", balanceError);
+      Get.snackbar('Insufficient leave balance', balanceError);
       return;
     }
 
     isSubmitting.value = true;
     try {
-      final response = await apiService.submitPermit({
+      // Build a per-type payload. For types with a photo we send multipart;
+      // otherwise plain JSON via the same endpoint (BE handler accepts both).
+      final body = <String, dynamic>{
         'type': type.value,
-        'description': descriptionController.text.trim(),
-        'startDate': startDate.value!.toIso8601String(),
-        'endDate': endDate.value!.toIso8601String(),
-      });
+        'description': desc,
+      };
+
+      if (_usesDateRange) {
+        body['startDate'] = startDate.value!.toIso8601String();
+        body['endDate'] = endDate.value!.toIso8601String();
+      } else if (_usesSingleDate) {
+        body['date'] = eventDate.value!.toIso8601String();
+      }
+
+      if (type.value == 'overtime') {
+        body['hours'] =
+            double.tryParse(overtimeHoursController.text.trim()) ?? 0;
+      }
+      if (type.value == 'reimburse') {
+        body['amount'] = _parseAmount(amountController.text) ?? 0;
+      }
+      if (type.value == 'loan') {
+        body['amount'] = _parseAmount(amountController.text) ?? 0;
+        body['tenorMonths'] =
+            int.tryParse(tenorMonthsController.text.trim()) ?? 0;
+      }
+
+      Response response;
+      final receipt = receiptImage.value;
+      if (type.value == 'reimburse' && receipt != null) {
+        // Receipt photo upload → multipart.
+        final form = FormData.fromMap({
+          ...body,
+          'receipt': await MultipartFile.fromFile(
+            receipt.path,
+            filename: receipt.path.split('/').last,
+          ),
+        });
+        response = await apiService.submitPermit(form);
+      } else {
+        response = await apiService.submitPermit(body);
+      }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final msg = response.data['message'] ?? 'Permit request submitted';
-        Get.snackbar("Success", msg);
-        // Reset form
-        descriptionController.clear();
-        startDate.value = null;
-        endDate.value = null;
-        type.value = 'sick';
+        final msg = response.data['message'] ?? 'Request submitted';
+        Get.snackbar('Success', msg);
+        _resetForm();
         fetchMyPermits();
         // Server may have charged the balance; refresh to reflect new used_days.
         loadLeaveBalance();
         Get.back();
       }
     } on DioException catch (e) {
-      Get.snackbar("Error", dioErrorMessage(e, 'Failed to submit permit'));
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to submit request'));
     } finally {
       isSubmitting.value = false;
+    }
+  }
+
+  void _resetForm() {
+    descriptionController.clear();
+    startDate.value = null;
+    endDate.value = null;
+    eventDate.value = null;
+    overtimeHoursController.clear();
+    amountController.clear();
+    tenorMonthsController.clear();
+    receiptImage.value = null;
+    type.value = 'leave';
+  }
+
+  /// Accept "Rp 1.000.000", "1,000,000", "1000000" — strip non-digits.
+  double? _parseAmount(String raw) {
+    final cleaned = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.isEmpty) return null;
+    return double.tryParse(cleaned);
+  }
+
+  Future<void> pickReceiptFromCamera() async {
+    final picker = ImagePicker();
+    try {
+      final picked = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 2048,
+        imageQuality: 85,
+      );
+      if (picked != null) receiptImage.value = File(picked.path);
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to open camera: $e');
+    }
+  }
+
+  Future<void> pickReceiptFromGallery() async {
+    final picker = ImagePicker();
+    try {
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        imageQuality: 85,
+      );
+      if (picked != null) receiptImage.value = File(picked.path);
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to open gallery: $e');
     }
   }
 
@@ -157,9 +296,23 @@ class PermitController extends GetxController {
     if (picked != null) endDate.value = picked;
   }
 
+  void selectEventDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      // Overtime + reimburse are typically backdated, allow last 90 days.
+      firstDate: DateTime.now().subtract(const Duration(days: 90)),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+    );
+    if (picked != null) eventDate.value = picked;
+  }
+
   @override
   void onClose() {
     descriptionController.dispose();
+    overtimeHoursController.dispose();
+    amountController.dispose();
+    tenorMonthsController.dispose();
     super.onClose();
   }
 }

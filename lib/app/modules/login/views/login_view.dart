@@ -73,9 +73,9 @@ class LoginView extends GetView<LoginController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Masuk", style: textTheme.headlineMedium),
+                    Text('Sign In', style: textTheme.headlineMedium),
                     const SizedBox(height: 4),
-                    Text("Selamat datang kembali. Silakan masuk untuk melanjutkan.",
+                    Text('Welcome back. Sign in to continue.',
                         style: textTheme.bodyMedium),
                     const SizedBox(height: 28),
 
@@ -123,7 +123,7 @@ class LoginView extends GetView<LoginController> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: const Text(
-                          "Lupa Password?",
+                          'Forgot password?',
                           style: TextStyle(
                             color: AppTheme.primary,
                             fontWeight: FontWeight.w600,
@@ -143,7 +143,7 @@ class LoginView extends GetView<LoginController> {
                                   child: CircularProgressIndicator(
                                       color: Colors.white, strokeWidth: 2.5),
                                 )
-                              : const Text("Masuk"),
+                              : const Text('Sign In'),
                         )),
                     const SizedBox(height: 16),
                     Center(
@@ -151,11 +151,11 @@ class LoginView extends GetView<LoginController> {
                         onPressed: () => Get.toNamed('/register'),
                         child: Text.rich(
                           TextSpan(
-                            text: "Belum punya akun? ",
+                            text: "Don't have an account? ",
                             style: textTheme.bodyMedium,
                             children: const [
                               TextSpan(
-                                text: "Daftar",
+                                text: 'Register',
                                 style: TextStyle(
                                   color: AppTheme.primary,
                                   fontWeight: FontWeight.bold,

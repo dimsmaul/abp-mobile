@@ -79,28 +79,28 @@ class AttendanceController extends GetxController {
     if (image.value == null) {
       _showResultDialog(
         success: false,
-        title: 'Belum Ada Foto',
-        message: 'Ambil selfie terlebih dahulu sebelum submit.',
+        title: 'No Photo Yet',
+        message: 'Please take a selfie before submitting.',
       );
       return;
     }
 
     if (currentPosition.value == null) {
-      _showLoadingDialog('Mengambil lokasi…');
+      _showLoadingDialog('Reading location…');
       await _getCurrentLocation();
       _closeLoadingDialog();
       if (currentPosition.value == null) {
         _showResultDialog(
           success: false,
-          title: 'Lokasi Belum Siap',
-          message: 'Pastikan GPS aktif dan coba lagi.',
+          title: 'Location Not Ready',
+          message: 'Make sure GPS is enabled and try again.',
         );
         return;
       }
     }
 
     isLoading.value = true;
-    _showLoadingDialog('Memverifikasi & mengirim…');
+    _showLoadingDialog('Verifying & sending…');
     try {
       // Selfie: 1280px max, JPEG q80 — still readable for watermark + face.
       final sanitized = await stripExif(File(image.value!.path),
@@ -131,16 +131,18 @@ class AttendanceController extends GetxController {
         final isWithinZone = payload?['isWithinZone'] == true;
         final score = (payload?['faceScore'] as num?)?.toDouble();
         final baseMsg = (body is Map ? body['message'] : null) ??
-            'Presensi berhasil dikirim';
+            'Attendance submitted successfully';
         final lines = <String>[
           baseMsg,
-          isWithinZone ? '✓ Dalam zona kantor' : '⚠ Di luar zona kantor',
+          isWithinZone ? '✓ Inside office zone' : '⚠ Outside office zone',
           if (score != null)
-            '✓ Wajah cocok (skor ${score.toStringAsFixed(3)})',
+            '✓ Face match (score ${score.toStringAsFixed(3)})',
         ];
         await _showResultDialog(
           success: true,
-          title: type == 'check_in' ? 'Check-in Berhasil' : 'Check-out Berhasil',
+          title: type == 'check_in'
+              ? 'Check-in Successful'
+              : 'Check-out Successful',
           message: lines.join('\n'),
         );
         if (Get.isRegistered<HomeController>()) {
@@ -160,15 +162,15 @@ class AttendanceController extends GetxController {
         );
         await _showResultDialog(
           success: true,
-          title: 'Tersimpan Offline',
-          message: 'Tidak ada koneksi. Presensi akan dikirim otomatis '
-              'saat koneksi pulih.',
+          title: 'Saved Offline',
+          message: 'No connection. Your attendance will be submitted '
+              'automatically once you are back online.',
         );
         Get.offAllNamed('/dashboard');
       } else {
         final data = e.response?.data;
-        final msg = (data is Map ? data['message'] : null) ??
-            'Gagal mengirim presensi';
+        final rawMsg = (data is Map ? data['message'] : null) ??
+            'Failed to submit attendance';
         final errBlock = data is Map && data['error'] is Map
             ? data['error'] as Map
             : null;
@@ -180,16 +182,22 @@ class AttendanceController extends GetxController {
         final threshold = details is Map
             ? (details['threshold'] as num?)?.toDouble()
             : null;
+        String msg = rawMsg.toString();
+        if (code == 'FACE_NOT_ENROLLED') {
+          msg =
+              'Face not registered. Open profile and upload a clear face photo '
+              'as your profile picture.';
+        }
         final extra = <String>[];
-        if (code != null) extra.add('Kode: $code');
+        if (code != null) extra.add('Code: $code');
         if (score != null && threshold != null) {
           extra.add(
-            'Skor wajah ${score.toStringAsFixed(3)} (minimum ${threshold.toStringAsFixed(2)})',
+            'Face score ${score.toStringAsFixed(3)} (minimum ${threshold.toStringAsFixed(2)})',
           );
         }
         await _showResultDialog(
           success: false,
-          title: 'Presensi Gagal',
+          title: 'Attendance Failed',
           message: [msg, ...extra].join('\n'),
         );
       }

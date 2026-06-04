@@ -12,7 +12,7 @@ class AnnouncementDetailView extends GetView<AnnouncementController> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Detail Pengumuman'),
+        title: const Text('Announcement Details'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -32,7 +32,7 @@ class AnnouncementDetailView extends GetView<AnnouncementController> {
             child: Padding(
               padding: EdgeInsets.all(24),
               child: Text(
-                'Pengumuman tidak ditemukan',
+                'Announcement not found',
                 style: TextStyle(color: AppTheme.textSecondary),
               ),
             ),
@@ -100,7 +100,7 @@ class AnnouncementDetailView extends GetView<AnnouncementController> {
                         Icon(Icons.push_pin, size: 12, color: AppTheme.warning),
                         SizedBox(width: 4),
                         Text(
-                          'Disematkan',
+                          'Pinned',
                           style: TextStyle(
                             color: AppTheme.warning,
                             fontSize: 11,
@@ -122,10 +122,10 @@ class AnnouncementDetailView extends GetView<AnnouncementController> {
               ),
             ),
             const SizedBox(height: 14),
-            _meta('Dipublikasi oleh', publisher),
+            _meta('Published by', publisher),
             const SizedBox(height: 6),
             _meta(
-              'Tanggal terbit',
+              'Publish date',
               published != null
                   ? DateFormat('dd MMM yyyy • HH:mm').format(published)
                   : '—',
@@ -133,7 +133,7 @@ class AnnouncementDetailView extends GetView<AnnouncementController> {
             if (expires != null) ...[
               const SizedBox(height: 6),
               _meta(
-                'Berakhir',
+                'Expires',
                 DateFormat('dd MMM yyyy').format(expires),
               ),
             ],
@@ -193,9 +193,9 @@ class AnnouncementDetailView extends GetView<AnnouncementController> {
   String _priorityLabel(String p) {
     switch (p) {
       case 'high':
-        return 'TINGGI';
+        return 'HIGH';
       case 'low':
-        return 'RENDAH';
+        return 'LOW';
       default:
         return 'NORMAL';
     }

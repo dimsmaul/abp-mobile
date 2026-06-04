@@ -11,7 +11,7 @@ class ProfileEditView extends GetView<ProfileEditController> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Edit Profil'),
+        title: const Text('Edit Profile'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -26,7 +26,7 @@ class ProfileEditView extends GetView<ProfileEditController> {
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Perbarui informasi dasar akun Anda. Email tidak dapat diubah.',
+              'Update your basic account information. Email cannot be changed.',
               style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 13,
@@ -35,13 +35,13 @@ class ProfileEditView extends GetView<ProfileEditController> {
             ),
             const SizedBox(height: 24),
 
-            const _SectionLabel('Nama Lengkap'),
+            const _SectionLabel('Full Name'),
             const SizedBox(height: 8),
             TextField(
               controller: controller.nameCtl,
               textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
-                hintText: 'Budi Santoso',
+                hintText: 'Jane Doe',
                 prefixIcon: Icon(Icons.person_outline, size: 20),
                 filled: true,
                 fillColor: Colors.white,
@@ -49,7 +49,7 @@ class ProfileEditView extends GetView<ProfileEditController> {
             ),
 
             const SizedBox(height: 16),
-            const _SectionLabel('Departemen'),
+            const _SectionLabel('Department'),
             const SizedBox(height: 8),
             TextField(
               controller: controller.deptCtl,
@@ -90,7 +90,7 @@ class ProfileEditView extends GetView<ProfileEditController> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Simpan Perubahan',
+                        : const Text('Save Changes',
                             style: TextStyle(fontWeight: FontWeight.w600)),
                   ),
                 )),

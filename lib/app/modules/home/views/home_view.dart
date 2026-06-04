@@ -36,7 +36,7 @@ class HomeView extends GetView<HomeController> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Aktivitas Terkini',
+                      'Recent Activity',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -51,7 +51,7 @@ class HomeView extends GetView<HomeController> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: const Text(
-                        'Lihat semua',
+                        'See all',
                         style: TextStyle(
                           color: AppTheme.primary,
                           fontWeight: FontWeight.w600,
@@ -73,10 +73,10 @@ class HomeView extends GetView<HomeController> {
 
   String _greeting() {
     final h = DateTime.now().hour;
-    if (h < 11) return 'Selamat pagi';
-    if (h < 15) return 'Selamat siang';
-    if (h < 19) return 'Selamat sore';
-    return 'Selamat malam';
+    if (h < 11) return 'Good morning';
+    if (h < 15) return 'Good afternoon';
+    if (h < 19) return 'Good evening';
+    return 'Good night';
   }
 
   Widget _buildHeader() {
@@ -142,7 +142,7 @@ class HomeView extends GetView<HomeController> {
               color: AppTheme.textSecondary,
               size: 20,
             ),
-            tooltip: 'Pengumuman',
+            tooltip: 'Announcements',
           ),
         ),
       ],
@@ -172,7 +172,7 @@ class HomeView extends GetView<HomeController> {
               const Icon(Icons.cloud_off, size: 12, color: AppTheme.danger),
               const SizedBox(width: 4),
               Text(
-                '$count pending',
+                '$count pending sync',
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -194,15 +194,15 @@ class HomeView extends GetView<HomeController> {
       Color bg;
       IconData icon;
       if (!hasIn) {
-        label = 'Belum Check-in';
+        label = 'Not Checked-in';
         bg = Colors.white.withValues(alpha: 0.18);
         icon = Icons.access_time;
       } else if (!hasOut) {
-        label = 'Sedang Bekerja';
+        label = 'Working';
         bg = Colors.white.withValues(alpha: 0.25);
         icon = Icons.circle;
       } else {
-        label = 'Selesai Hari Ini';
+        label = 'Done for today';
         bg = Colors.white.withValues(alpha: 0.25);
         icon = Icons.check_circle_outline;
       }
@@ -342,21 +342,21 @@ class HomeView extends GetView<HomeController> {
       children: [
         _action(
           icon: Icons.assignment_outlined,
-          label: 'Laporan',
+          label: 'Reports',
           tint: AppTheme.primary,
           onTap: controller.goToReports,
         ),
         const SizedBox(width: 12),
         _action(
           icon: Icons.history_rounded,
-          label: 'Riwayat',
+          label: 'History',
           tint: AppTheme.success,
           onTap: controller.goToHistory,
         ),
         const SizedBox(width: 12),
         _action(
           icon: Icons.event_note_outlined,
-          label: 'Pengajuan',
+          label: 'Requests',
           tint: AppTheme.warning,
           onTap: controller.goToPermit,
         ),
@@ -420,7 +420,7 @@ class HomeView extends GetView<HomeController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Pengumuman',
+              'Announcements',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -435,7 +435,7 @@ class HomeView extends GetView<HomeController> {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: const Text(
-                'Lihat semua',
+                'See all',
                 style: TextStyle(
                   color: AppTheme.primary,
                   fontWeight: FontWeight.w600,
@@ -463,7 +463,7 @@ class HomeView extends GetView<HomeController> {
                       size: 32, color: AppTheme.textHint),
                   SizedBox(height: 6),
                   Text(
-                    'Belum ada pengumuman',
+                    'No announcements yet',
                     style: TextStyle(
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.w600,
@@ -582,7 +582,7 @@ class HomeView extends GetView<HomeController> {
               Icon(Icons.history, size: 40, color: AppTheme.textHint),
               SizedBox(height: 8),
               Text(
-                'Belum ada aktivitas',
+                'No activity yet',
                 style: TextStyle(
                   color: AppTheme.textSecondary,
                   fontWeight: FontWeight.w600,
@@ -590,7 +590,7 @@ class HomeView extends GetView<HomeController> {
               ),
               SizedBox(height: 4),
               Text(
-                'Check-in di tab Camera untuk memulai',
+                'Check in via the Presence tab to start',
                 style: TextStyle(color: AppTheme.textHint, fontSize: 12),
               ),
             ],
@@ -656,7 +656,7 @@ class HomeView extends GetView<HomeController> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        inZone ? 'Dalam zona' : 'Luar zona',
+                        inZone ? 'In zone' : 'Out of zone',
                         style: TextStyle(
                           color: inZone ? AppTheme.success : AppTheme.warning,
                           fontSize: 10,

@@ -21,6 +21,10 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+    // FCM. Plugin is registered here (apply false) and applied conditionally
+    // by app/build.gradle.kts when google-services.json is present so the
+    // project still builds on a clean clone without the Firebase config.
+    id("com.google.gms.google-services") version "4.4.2" apply false
 }
 
 include(":app")

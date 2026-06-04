@@ -26,8 +26,8 @@ class ForgetPasswordController extends GetxController {
     try {
       await apiService.forgetPassword(email);
       Get.snackbar(
-        "Success",
-        "Cek email Anda untuk tautan reset",
+        'Success',
+        'Check your email for the reset link',
         snackPosition: SnackPosition.BOTTOM,
       );
       Get.back();

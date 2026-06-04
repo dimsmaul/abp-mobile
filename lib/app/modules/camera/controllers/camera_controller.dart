@@ -70,10 +70,10 @@ class CustomCameraController extends GetxController {
       permissionDenied.value = true;
       Future.delayed(Duration.zero, () {
         Get.snackbar(
-          'Izin Kamera Ditolak',
+          'Camera Permission Denied',
           status.isPermanentlyDenied
-              ? 'Aktifkan izin kamera di Pengaturan untuk mengambil foto.'
-              : 'Izin kamera dibutuhkan untuk presensi.',
+              ? 'Enable the camera permission in Settings to take a photo.'
+              : 'Camera permission is required for attendance.',
         );
       });
       return;
@@ -171,7 +171,7 @@ class CustomCameraController extends GetxController {
       }
     } catch (e) {
       debugPrint('[camera] capture error: $e');
-      await _resetAfterError('Gagal mengambil foto: $e');
+      await _resetAfterError('Failed to capture photo: $e');
     }
   }
 
@@ -179,11 +179,11 @@ class CustomCameraController extends GetxController {
     final type = attendanceType;
     final api = _api;
     if (type == null || api == null) {
-      await _resetAfterError('Layanan tidak siap. Coba lagi.');
+      await _resetAfterError('Service not ready. Please try again.');
       return;
     }
 
-    showAppLoadingDialog('Memvalidasi & mengirim…');
+    showAppLoadingDialog('Validating & sending…');
 
     Position? position;
     try {
@@ -192,8 +192,8 @@ class CustomCameraController extends GetxController {
       closeAppLoadingDialog();
       await showAppResultDialog(
         success: false,
-        title: 'Lokasi Bermasalah',
-        message: 'Tidak bisa mengambil lokasi: $e',
+        title: 'Location Problem',
+        message: 'Could not read location: $e',
       );
       await _retake();
       return;
@@ -202,8 +202,8 @@ class CustomCameraController extends GetxController {
       closeAppLoadingDialog();
       await showAppResultDialog(
         success: false,
-        title: 'Lokasi Belum Siap',
-        message: 'Aktifkan GPS dan izin lokasi, lalu coba lagi.',
+        title: 'Location Not Ready',
+        message: 'Turn on GPS and grant location permission, then try again.',
       );
       await _retake();
       return;
@@ -249,18 +249,19 @@ class CustomCameraController extends GetxController {
         final isWithinZone = payload?['isWithinZone'] == true;
         final score = _asDouble(payload?['faceScore']);
         final baseMsg = (body is Map ? body['message'] : null) ??
-            'Presensi berhasil dikirim';
+            'Attendance submitted successfully';
         final lines = <String>[
           baseMsg,
-          isWithinZone ? '✓ Dalam zona kantor' : '⚠ Di luar zona kantor',
+          isWithinZone ? '✓ Inside office zone' : '⚠ Outside office zone',
           if (score != null)
-            '✓ Wajah cocok (skor ${score.toStringAsFixed(3)})',
+            '✓ Face match (score ${score.toStringAsFixed(3)})',
         ];
         stage.value = CameraStage.done;
         await showAppResultDialog(
           success: true,
-          title:
-              type == 'check_in' ? 'Check-in Berhasil' : 'Check-out Berhasil',
+          title: type == 'check_in'
+              ? 'Check-in Successful'
+              : 'Check-out Successful',
           message: lines.join('\n'),
         );
         if (Get.isRegistered<HomeController>()) {
@@ -283,9 +284,9 @@ class CustomCameraController extends GetxController {
         );
         await showAppResultDialog(
           success: true,
-          title: 'Tersimpan Offline',
-          message: 'Tidak ada koneksi. Presensi akan dikirim otomatis '
-              'saat koneksi pulih.',
+          title: 'Saved Offline',
+          message: 'No connection. Your attendance will be submitted '
+              'automatically once you are back online.',
         );
         stage.value = CameraStage.done;
         Get.offAllNamed('/dashboard');
@@ -293,8 +294,8 @@ class CustomCameraController extends GetxController {
       }
 
       final data = e.response?.data;
-      final msg = (data is Map ? data['message'] : null) ??
-          'Gagal mengirim presensi';
+      final rawMsg = (data is Map ? data['message'] : null) ??
+          'Failed to submit attendance';
       final errBlock = data is Map && data['error'] is Map
           ? data['error'] as Map
           : null;
@@ -303,19 +304,31 @@ class CustomCameraController extends GetxController {
       final score = details is Map ? _asDouble(details['score']) : null;
       final threshold =
           details is Map ? _asDouble(details['threshold']) : null;
+
+      // Friendly message for face-not-enrolled — the user needs to upload a
+      // clear face photo before they can check in.
+      String msg = rawMsg.toString();
+      if (code == 'FACE_NOT_ENROLLED' ||
+          msg.toLowerCase().contains('face') &&
+              msg.toLowerCase().contains('not')) {
+        msg =
+            'Face not registered. Open profile and upload a clear face photo '
+            'as your profile picture.';
+      }
+
       final extra = <String>[];
-      if (code != null) extra.add('Kode: $code');
+      if (code != null) extra.add('Code: $code');
       if (score != null && threshold != null) {
         extra.add(
-          'Skor wajah ${score.toStringAsFixed(3)} '
+          'Face score ${score.toStringAsFixed(3)} '
           '(minimum ${threshold.toStringAsFixed(2)})',
         );
       }
       await showAppResultDialog(
         success: false,
-        title: 'Presensi Gagal',
+        title: 'Attendance Failed',
         message: [msg, ...extra].join('\n'),
-        okLabel: 'Coba Lagi',
+        okLabel: 'Try Again',
       );
       await _retake();
     } catch (e) {
@@ -324,7 +337,7 @@ class CustomCameraController extends GetxController {
         success: false,
         title: 'Error',
         message: e.toString(),
-        okLabel: 'Coba Lagi',
+        okLabel: 'Try Again',
       );
       await _retake();
     }
@@ -384,7 +397,7 @@ class CustomCameraController extends GetxController {
       success: false,
       title: 'Error',
       message: message,
-      okLabel: 'Coba Lagi',
+      okLabel: 'Try Again',
     );
     await _retake();
   }

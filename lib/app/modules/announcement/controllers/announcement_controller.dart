@@ -50,7 +50,7 @@ class AnnouncementController extends GetxController {
         }
       }
     } on DioException catch (e) {
-      Get.snackbar('Error', dioErrorMessage(e, 'Gagal memuat pengumuman'));
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to load announcements'));
     } finally {
       isLoading.value = false;
       isLoadingMore.value = false;
@@ -67,7 +67,7 @@ class AnnouncementController extends GetxController {
         detail.value = Map<String, dynamic>.from(res.data['data'] as Map);
       }
     } on DioException catch (e) {
-      Get.snackbar('Error', dioErrorMessage(e, 'Gagal memuat detail'));
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to load details'));
     } finally {
       isDetailLoading.value = false;
     }

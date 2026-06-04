@@ -45,7 +45,7 @@ class PresenceView extends GetView<PresenceController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Presensi',
+          'Attendance',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -54,7 +54,7 @@ class PresenceView extends GetView<PresenceController> {
         ),
         SizedBox(height: 4),
         Text(
-          'Verifikasi lokasi sebelum check-in / check-out',
+          'Verify your location before checking in / out',
           style: TextStyle(
             fontSize: 13,
             color: AppTheme.textSecondary,
@@ -70,90 +70,90 @@ class PresenceView extends GetView<PresenceController> {
       case PresenceState.initial:
         return _neutralCard(
           icon: Icons.touch_app_outlined,
-          title: 'Tekan tombol di bawah',
-          subtitle: 'Mulai verifikasi lokasi untuk presensi',
+          title: 'Press the button below',
+          subtitle: 'Start location verification for attendance',
         );
       case PresenceState.initializing:
       case PresenceState.fetching:
         return _neutralCard(
           icon: Icons.location_searching,
           title: controller.state.value == PresenceState.initializing
-              ? 'Menyiapkan…'
-              : 'Membaca lokasi & kantor…',
-          subtitle: 'Mohon tunggu sebentar',
+              ? 'Preparing…'
+              : 'Reading location & offices…',
+          subtitle: 'Please wait a moment',
           showSpinner: true,
         );
       case PresenceState.permissionCameraDenied:
         return _alertCard(
           color: AppTheme.danger,
           icon: Icons.no_photography_outlined,
-          title: 'Izin Kamera Ditolak',
+          title: 'Camera Permission Denied',
           subtitle:
-              'Buka Pengaturan dan aktifkan izin kamera untuk melanjutkan.',
-          actionLabel: 'Buka Pengaturan',
+              'Open Settings and enable the camera permission to continue.',
+          actionLabel: 'Open Settings',
           onAction: controller.openSettings,
         );
       case PresenceState.permissionLocationDenied:
         return _alertCard(
           color: AppTheme.danger,
           icon: Icons.location_off_outlined,
-          title: 'Izin Lokasi Ditolak',
+          title: 'Location Permission Denied',
           subtitle:
-              'Buka Pengaturan dan aktifkan izin lokasi untuk verifikasi kantor.',
-          actionLabel: 'Buka Pengaturan',
+              'Open Settings and enable the location permission to verify your office.',
+          actionLabel: 'Open Settings',
           onAction: controller.openSettings,
         );
       case PresenceState.locationServiceOff:
         return _alertCard(
           color: AppTheme.danger,
           icon: Icons.gps_off,
-          title: 'GPS Mati',
-          subtitle: 'Hidupkan layanan lokasi pada perangkat.',
-          actionLabel: 'Buka Pengaturan GPS',
+          title: 'GPS is Off',
+          subtitle: 'Turn on Location Services on your device.',
+          actionLabel: 'Open GPS Settings',
           onAction: controller.openLocationSettings,
         );
       case PresenceState.noOffices:
         return _alertCard(
           color: AppTheme.danger,
           icon: Icons.business_outlined,
-          title: 'Tidak Ada Kantor Terdaftar',
+          title: 'No Offices Registered',
           subtitle:
-              'Hubungi admin untuk menambahkan area kantor terlebih dahulu.',
-          actionLabel: 'Cek Ulang',
+              'Contact your administrator to register an office area first.',
+          actionLabel: 'Retry',
           onAction: controller.start,
         );
       case PresenceState.alreadyComplete:
         return _gradientCard(
           colors: const [AppTheme.success, Color(0xFF059669)],
           icon: Icons.check_circle,
-          title: 'Presensi Hari Ini Selesai',
+          title: 'Attendance Complete for Today',
           subtitle:
-              'Anda sudah check-in dan check-out. Sampai jumpa besok!',
+              'You have already checked in and out. See you tomorrow!',
         );
       case PresenceState.error:
         return _alertCard(
           color: AppTheme.danger,
           icon: Icons.error_outline,
-          title: 'Terjadi Kesalahan',
+          title: 'An error occurred',
           subtitle: controller.errorMessage.value,
-          actionLabel: 'Coba Lagi',
+          actionLabel: 'Try Again',
           onAction: controller.start,
         );
       case PresenceState.inZone:
         return _gradientCard(
           colors: const [AppTheme.success, Color(0xFF059669)],
           icon: Icons.check_circle_outline,
-          title: 'Anda di kantor',
+          title: 'You are at the office',
           subtitle: controller.matchedOfficeName.value ??
-              'Lokasi kantor terverifikasi',
+              'Office location verified',
         );
       case PresenceState.outOfZone:
         return _gradientCard(
           colors: const [AppTheme.danger, Color(0xFFB91C1C)],
           icon: Icons.location_off,
-          title: 'Anda berada di luar lokasi kantor',
+          title: 'You are outside the office area',
           subtitle:
-              'Presensi hanya bisa dilakukan saat berada di dalam area kantor.',
+              'Attendance is only possible while inside the office area.',
         );
     }
   }
@@ -352,20 +352,20 @@ class PresenceView extends GetView<PresenceController> {
     VoidCallback? onTap;
     if (inZone) {
       label = controller.attendanceType.value == 'check_in'
-          ? 'Buka Kamera · Check-in'
-          : 'Buka Kamera · Check-out';
+          ? 'Open Camera · Check-in'
+          : 'Open Camera · Check-out';
       onTap = controller.openCamera;
     } else if (s == PresenceState.initial) {
-      label = 'Mulai Verifikasi';
+      label = 'Start Verification';
       onTap = controller.start;
     } else if (s == PresenceState.alreadyComplete) {
-      label = 'Selesai Hari Ini';
+      label = 'Done for Today';
       onTap = null;
     } else if (busy) {
-      label = 'Memverifikasi…';
+      label = 'Verifying…';
       onTap = null;
     } else {
-      label = 'Verifikasi Ulang';
+      label = 'Verify Again';
       onTap = controller.start;
     }
 

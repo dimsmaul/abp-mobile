@@ -105,7 +105,7 @@ class CameraView extends GetView<CustomCameraController> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Foto terkunci, memproses...',
+                      'Photo locked, processing...',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 13,
@@ -179,7 +179,7 @@ class CameraView extends GetView<CustomCameraController> {
               color: Colors.white, size: 48),
           const SizedBox(height: 16),
           const Text(
-            'Izin Kamera Diperlukan',
+            'Camera Permission Required',
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -188,7 +188,7 @@ class CameraView extends GetView<CustomCameraController> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Aktifkan izin kamera di Pengaturan agar bisa mengambil selfie untuk presensi.',
+            'Enable the camera permission in Settings so we can take a selfie for attendance.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
@@ -196,13 +196,13 @@ class CameraView extends GetView<CustomCameraController> {
           ElevatedButton.icon(
             onPressed: controller.openAppSettingsForPermission,
             icon: const Icon(Icons.settings),
-            label: const Text('Buka Pengaturan'),
+            label: const Text('Open Settings'),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: Get.back,
             child: const Text(
-              'Batal',
+              'Cancel',
               style: TextStyle(color: Colors.white70),
             ),
           ),

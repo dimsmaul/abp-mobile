@@ -12,7 +12,7 @@ class AnnouncementListView extends GetView<AnnouncementController> {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Pengumuman'),
+        title: const Text('Announcements'),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -72,7 +72,7 @@ class AnnouncementListView extends GetView<AnnouncementController> {
             Icon(Icons.campaign_outlined, size: 56, color: AppTheme.textHint),
             SizedBox(height: 12),
             Text(
-              'Belum ada pengumuman',
+              'No announcements yet',
               style: TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 16,

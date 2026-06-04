@@ -19,58 +19,58 @@ class ProfileView extends GetView<ProfileController> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate.fixed([
-                _SectionLabel('Akun'),
+                _SectionLabel('Account'),
                 _Card(
                   children: [
                     _Tile(
                       icon: Icons.person_outline,
-                      title: 'Edit Profil',
-                      subtitle: 'Ubah nama dan departemen',
+                      title: 'Edit Profile',
+                      subtitle: 'Update name and department',
                       onTap: () => Get.toNamed(Routes.PROFILE_EDIT),
                     ),
                     const _DividerInset(),
                     _Tile(
                       icon: Icons.lock_outline,
-                      title: 'Ganti Password',
-                      subtitle: 'Update kata sandi akun',
+                      title: 'Change Password',
+                      subtitle: 'Update your account password',
                       onTap: () => Get.toNamed(Routes.CHANGE_PASSWORD),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
-                _SectionLabel('Aktivitas'),
+                _SectionLabel('Activity'),
                 _Card(
                   children: [
                     _Tile(
                       icon: Icons.assignment_outlined,
-                      title: 'Laporan Saya',
-                      subtitle: 'Lihat laporan lapangan yang dikirim',
+                      title: 'My Reports',
+                      subtitle: 'See your submitted field reports',
                       onTap: () => Get.toNamed(Routes.REPORTS),
                     ),
                     const _DividerInset(),
                     _Tile(
                       icon: Icons.event_note_outlined,
-                      title: 'Pengajuan Saya',
-                      subtitle: 'Cuti, izin, sakit, dinas',
+                      title: 'My Requests',
+                      subtitle: 'Leave, sick, permits, overtime, reimbursement',
                       onTap: () => Get.toNamed(Routes.PERMIT),
                     ),
                     const _DividerInset(),
                     _Tile(
                       icon: Icons.history,
-                      title: 'Riwayat Presensi',
-                      subtitle: 'Check-in & check-out terdahulu',
+                      title: 'Attendance History',
+                      subtitle: 'Previous check-ins & check-outs',
                       onTap: () => Get.toNamed(Routes.ATTENDANCE_HISTORY),
                     ),
                   ],
                 ),
                 const SizedBox(height: 20),
-                _SectionLabel('Lainnya'),
+                _SectionLabel('Other'),
                 _Card(
                   children: [
                     _Tile(
                       icon: Icons.logout,
                       title: 'Sign Out',
-                      subtitle: 'Keluar dari akun',
+                      subtitle: 'Log out of your account',
                       iconColor: AppTheme.danger,
                       titleColor: AppTheme.danger,
                       onTap: controller.logout,
@@ -256,8 +256,8 @@ class _Header extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined,
                   color: AppTheme.primary),
-              title: const Text('Ambil Foto'),
-              subtitle: const Text('Buka kamera untuk foto baru'),
+              title: const Text('Take Photo'),
+              subtitle: const Text('Open the camera for a new photo'),
               onTap: () {
                 Navigator.of(ctx).pop();
                 controller.pickAndUploadProfilePicture();
@@ -267,8 +267,8 @@ class _Header extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.photo_library_outlined,
                   color: AppTheme.primary),
-              title: const Text('Pilih dari Galeri'),
-              subtitle: const Text('Pilih foto dari penyimpanan'),
+              title: const Text('Choose from Gallery'),
+              subtitle: const Text('Pick a photo from your device'),
               onTap: () {
                 Navigator.of(ctx).pop();
                 controller.pickFromGalleryAndUpload();
@@ -277,7 +277,7 @@ class _Header extends StatelessWidget {
             const Divider(height: 1, color: AppTheme.cardBorder),
             ListTile(
               leading: const Icon(Icons.close, color: AppTheme.textHint),
-              title: const Text('Batal'),
+              title: const Text('Cancel'),
               onTap: () => Navigator.of(ctx).pop(),
             ),
           ],

@@ -73,7 +73,7 @@ class ForgetPasswordView extends GetView<ForgetPasswordController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Masukkan email Anda untuk menerima tautan reset password.",
+                      'Enter your email to receive a password reset link.',
                       style: textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 24),
@@ -98,7 +98,7 @@ class ForgetPasswordView extends GetView<ForgetPasswordController> {
                                   child: CircularProgressIndicator(
                                       color: Colors.white, strokeWidth: 2.5),
                                 )
-                              : const Text("Kirim Tautan Reset"),
+                              : const Text('Send Reset Link'),
                         )),
                     const SizedBox(height: 24),
                     Center(
@@ -106,7 +106,7 @@ class ForgetPasswordView extends GetView<ForgetPasswordController> {
                         onPressed: () => Get.back(),
                         child: Text.rich(
                           TextSpan(
-                            text: "Ingat password? ",
+                            text: 'Remember your password? ',
                             style: textTheme.bodyMedium,
                             children: const [
                               TextSpan(
