@@ -33,7 +33,17 @@ class CalendarView extends GetView<CalendarController> {
                 const SizedBox(height: 16),
                 _weekdayHeader(),
                 const SizedBox(height: 8),
-                Obx(() => _grid(context)),
+                // Touch BOTH observables inside the Obx scope so the grid
+                // rebuilds when the month switches OR the fetched data
+                // lands. `entryFor` reads `daysByDate` from inside an
+                // itemBuilder which runs outside Obx tracking — without
+                // this explicit read, dots never appeared after the
+                // network response arrived.
+                Obx(() {
+                  controller.visibleMonth.value;
+                  controller.daysByDate.length;
+                  return _grid(context);
+                }),
                 const SizedBox(height: 20),
                 _legend(),
               ],
