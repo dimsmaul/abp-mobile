@@ -60,7 +60,10 @@ class PermitView extends GetView<PermitController> {
     final title = locked == null
         ? 'My Requests'
         : _titleForCategory(locked);
-    final showLeaveBalance = locked == null || locked == 'leave';
+    // Leave balance only relevant when the user is looking at leave
+    // requests specifically — hidden on the general "My Requests" tab and
+    // on every other category-locked route.
+    final showLeaveBalance = locked == 'leave';
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
