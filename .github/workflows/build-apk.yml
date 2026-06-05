@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build debug APK
+    name: Build release APK (split per ABI)
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -58,67 +58,73 @@ jobs:
 
       - name: Static analysis (advisory)
         # Soft-fail so a single style nit doesn't block the build artifact.
-        # Replace with `flutter analyze --fatal-warnings` once the codebase
-        # is clean of pre-existing info-level lints.
         run: flutter analyze || true
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      # Release build (AOT compiled, stripped) + split-per-abi so each APK
+      # only ships the native libs for one architecture. A fat debug APK
+      # was ~200MB; per-ABI release APKs typically land at 40-60MB each.
+      # Skips dart symbol generation to keep the binary smaller.
+      - name: Build release APK (split per ABI)
+        run: flutter build apk --release --split-per-abi
 
-      # Rename APK so artifact + release filenames advertise the version
-      # number instead of the generic `app-debug.apk`.
-      - name: Rename APK with version
+      # Rename the per-architecture APKs to advertise the version. Output
+      # path Flutter uses: build/app/outputs/flutter-apk/app-<abi>-release.apk
+      - name: Collect + rename APKs
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
           mkdir -p dist
-          if [[ "$REF_NAME" == v* ]]; then
-            name="fieldtrack-${REF_NAME}.apk"
-          else
-            name="fieldtrack-${REF_NAME}-${GITHUB_RUN_NUMBER}.apk"
+          tag_or_ref="$REF_NAME"
+          if [[ "$tag_or_ref" != v* ]]; then
+            tag_or_ref="${tag_or_ref}-${GITHUB_RUN_NUMBER}"
           fi
-          cp build/app/outputs/flutter-apk/app-debug.apk "dist/${name}"
-          echo "APK_NAME=${name}" >> "$GITHUB_ENV"
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            src="build/app/outputs/flutter-apk/app-${abi}-release.apk"
+            if [[ -f "$src" ]]; then
+              cp "$src" "dist/fieldtrack-${tag_or_ref}-${abi}.apk"
+            fi
+          done
           ls -lh dist/
 
-      # Surface a short summary so the run page shows the apk size at a
-      # glance instead of having to download the artifact to check.
-      # `github.ref_name` is attacker-controllable (anyone with push access
-      # can craft a branch / tag name) so it must NOT be interpolated into
-      # the run script as a literal — pass it via an env var instead.
-      - name: Inspect APK
+      # Surface a short summary so the run page shows the apk sizes at a
+      # glance instead of having to download artifacts to check.
+      # `github.ref_name` is attacker-controllable so it must NOT be
+      # interpolated into the run script as a literal — pass it via env
+      # var instead.
+      - name: Inspect APKs
         env:
           REF_NAME: ${{ github.ref_name }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          apk_path="dist/${APK_NAME}"
           {
             echo "## APK build"
             echo ""
-            echo "| Field | Value |"
+            echo "| File | Size |"
             echo "|---|---|"
-            echo "| File | ${APK_NAME} |"
-            echo "| Size | $(du -h "$apk_path" | cut -f1) |"
-            echo "| Commit | $COMMIT_SHA |"
-            echo "| Branch / Tag | $REF_NAME |"
+            for f in dist/*.apk; do
+              echo "| $(basename "$f") | $(du -h "$f" | cut -f1) |"
+            done
+            echo ""
+            echo "Commit: $COMMIT_SHA"
+            echo "Ref: $REF_NAME"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload APK as workflow artifact
+      - name: Upload APKs as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APK_NAME }}
-          path: dist/${{ env.APK_NAME }}
+          name: fieldtrack-${{ github.ref_name }}-${{ github.run_number }}
+          path: dist/*.apk
           retention-days: 30
           if-no-files-found: error
 
-      # Tagged pushes get a permanent GitHub Release with the APK attached
-      # so beta testers can pull a stable link without rummaging through
-      # workflow runs.
+      # Tagged pushes get a permanent GitHub Release with all per-ABI APKs
+      # attached. Most users want arm64-v8a; armeabi-v7a is for older
+      # 32-bit phones, x86_64 is for emulators.
       - name: Publish GitHub Release on tag
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
-          files: dist/${{ env.APK_NAME }}
+          files: dist/*.apk
           generate_release_notes: true
           fail_on_unmatched_files: true
