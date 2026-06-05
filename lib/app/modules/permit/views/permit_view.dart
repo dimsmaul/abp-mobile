@@ -2,95 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme.dart';
 import '../../../core/constants.dart';
+import '../../../core/theme.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../controllers/permit_controller.dart';
 
-// Tab definitions. Order = display order. Each tab maps a label + the BE
-// category set it surfaces + the default form category when the FAB on this
-// tab is tapped.
-class _PermitTab {
-  final String label;
-  final Set<String> categories;
-  final String defaultFormCategory;
-  final String sheetTitle;
-  final String emptyMessage;
-  const _PermitTab({
-    required this.label,
-    required this.categories,
-    required this.defaultFormCategory,
-    required this.sheetTitle,
-    required this.emptyMessage,
-  });
-}
-
-const List<_PermitTab> _kTabs = [
-  _PermitTab(
-    label: 'Leave',
-    categories: PermitController.leaveCategories,
-    defaultFormCategory: 'leave',
-    sheetTitle: 'New Leave Request',
-    emptyMessage: 'No leave requests yet',
-  ),
-  _PermitTab(
-    label: 'Overtime',
-    categories: PermitController.overtimeCategories,
-    defaultFormCategory: 'overtime',
-    sheetTitle: 'Submit Overtime',
-    emptyMessage: 'No overtime records',
-  ),
-  _PermitTab(
-    label: 'Reimburse',
-    categories: PermitController.reimburseCategories,
-    defaultFormCategory: 'reimburse',
-    sheetTitle: 'Submit Reimbursement',
-    emptyMessage: 'No reimbursements yet',
-  ),
-  _PermitTab(
-    label: 'Loan',
-    categories: PermitController.loanCategories,
-    defaultFormCategory: 'loan',
-    sheetTitle: 'Apply for Loan',
-    emptyMessage: 'No loan requests yet',
-  ),
-];
-
-class PermitView extends StatefulWidget {
+class PermitView extends GetView<PermitController> {
   const PermitView({super.key});
-
-  @override
-  State<PermitView> createState() => _PermitViewState();
-}
-
-class _PermitViewState extends State<PermitView>
-    with TickerProviderStateMixin {
-  late final TabController _tabController;
-  late final PermitController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = Get.find<PermitController>();
-    _tabController = TabController(length: _kTabs.length, vsync: this);
-    // Rebuild FAB + body affordances when the active tab changes.
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) return;
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final embeddedInDashboard = Get.isRegistered<DashboardController>();
-    final activeTab = _kTabs[_tabController.index];
-
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
@@ -99,6 +21,7 @@ class _PermitViewState extends State<PermitView>
         elevation: 0,
         scrolledUnderElevation: 0,
         foregroundColor: AppTheme.textPrimary,
+        // No back button when shown as a dashboard tab.
         leading: embeddedInDashboard
             ? null
             : IconButton(
@@ -108,133 +31,74 @@ class _PermitViewState extends State<PermitView>
         automaticallyImplyLeading: !embeddedInDashboard,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              color: AppTheme.scaffoldBg,
-              child: TabBar(
-                controller: _tabController,
-                isScrollable: false,
-                labelColor: AppTheme.primary,
-                unselectedLabelColor: AppTheme.textHint,
-                indicatorColor: AppTheme.primary,
-                indicatorWeight: 2.5,
-                labelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+        child: Obx(() {
+          final isInitialLoading =
+              controller.isLoading.value && controller.permits.isEmpty;
+
+          if (!isInitialLoading && controller.permits.isEmpty) {
+            return LayoutBuilder(
+              builder: (ctx, bc) => RefreshIndicator(
+                onRefresh: () async {
+                  await controller.fetchMyPermits();
+                  await controller.loadLeaveBalance();
+                },
+                color: AppTheme.primary,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: bc.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                            child: _LeaveBalanceCard(controller: controller),
+                          ),
+                          const Expanded(child: Center(child: _Empty())),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: _kTabs.map((t) => Tab(text: t.label)).toList(),
               ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              await controller.fetchMyPermits();
+              await controller.loadLeaveBalance();
+            },
+            color: AppTheme.primary,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
+              children: [
+                _LeaveBalanceCard(controller: controller),
+                Obx(() => controller.leaveBalance.value == null
+                    ? const SizedBox.shrink()
+                    : const SizedBox(height: 16)),
+                if (isInitialLoading)
+                  ...List.generate(3, (_) => const _Skeleton())
+                else
+                  ...controller.permits.map((p) => _PermitCard(permit: p)),
+              ],
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: _kTabs
-                    .map((t) => _PermitTabBody(
-                          controller: controller,
-                          tab: t,
-                        ))
-                    .toList(),
-              ),
-            ),
-          ],
-        ),
+          );
+        }),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddPermitSheet(context, activeTab),
+        onPressed: () => _showAddPermitSheet(context),
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  void _showAddPermitSheet(BuildContext context, _PermitTab tab) {
-    controller.setActiveCategory(tab.defaultFormCategory);
+  void _showAddPermitSheet(BuildContext context) {
     Get.bottomSheet(
-      _PermitFormSheet(controller: controller, tab: tab),
+      _PermitFormSheet(controller: controller),
       isScrollControlled: true,
     );
-  }
-}
-
-// ── Per-tab body: balance card (Leave only) + filtered list ──
-class _PermitTabBody extends StatelessWidget {
-  final PermitController controller;
-  final _PermitTab tab;
-  const _PermitTabBody({required this.controller, required this.tab});
-
-  Future<void> _refresh() async {
-    await controller.fetchMyPermits();
-    if (tab.categories.contains('leave')) {
-      await controller.loadLeaveBalance();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final showBalance = tab.categories.contains('leave');
-
-    return Obx(() {
-      final isInitialLoading =
-          controller.isLoading.value && controller.permits.isEmpty;
-      final items = controller.permitsByCategory(tab.categories);
-
-      if (!isInitialLoading && items.isEmpty) {
-        return LayoutBuilder(
-          builder: (ctx, bc) => RefreshIndicator(
-            onRefresh: _refresh,
-            color: AppTheme.primary,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: bc.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      if (showBalance)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                          child: _LeaveBalanceCard(controller: controller),
-                        ),
-                      Expanded(
-                        child: Center(child: _Empty(message: tab.emptyMessage)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }
-
-      return RefreshIndicator(
-        onRefresh: _refresh,
-        color: AppTheme.primary,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
-          children: [
-            if (showBalance) ...[
-              _LeaveBalanceCard(controller: controller),
-              Obx(() => controller.leaveBalance.value == null
-                  ? const SizedBox.shrink()
-                  : const SizedBox(height: 16)),
-            ],
-            if (isInitialLoading)
-              ...List.generate(3, (_) => const _Skeleton())
-            else
-              ...items.map((p) => _PermitCard(
-                    permit: p,
-                    showTypeChip: tab.categories.length > 1,
-                  )),
-          ],
-        ),
-      );
-    });
   }
 }
 
@@ -315,10 +179,7 @@ class _LeaveBalanceCard extends StatelessWidget {
 // ── Permit Card Widget ──
 class _PermitCard extends StatelessWidget {
   final dynamic permit;
-  /// Hide the per-category badge on single-category tabs where it'd just
-  /// duplicate the active tab label.
-  final bool showTypeChip;
-  const _PermitCard({required this.permit, this.showTypeChip = true});
+  const _PermitCard({required this.permit});
 
   @override
   Widget build(BuildContext context) {
@@ -386,10 +247,8 @@ class _PermitCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (showTypeChip) ...[
-                            const SizedBox(width: 6),
-                            _typeChip(typeStr, typeColor),
-                          ],
+                          const SizedBox(width: 6),
+                          _typeChip(typeStr, typeColor),
                         ],
                       ),
                       const SizedBox(height: 2),
@@ -497,8 +356,7 @@ class _PermitCard extends StatelessWidget {
 
 // ── Empty + Skeleton ──
 class _Empty extends StatelessWidget {
-  final String message;
-  const _Empty({required this.message});
+  const _Empty();
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -517,9 +375,9 @@ class _Empty extends StatelessWidget {
                 color: AppTheme.primary, size: 24),
           ),
           const SizedBox(height: 12),
-          Text(
-            message,
-            style: const TextStyle(
+          const Text(
+            'No requests yet',
+            style: TextStyle(
               color: AppTheme.textPrimary,
               fontWeight: FontWeight.w700,
               fontSize: 15,
@@ -593,15 +451,10 @@ class _Skeleton extends StatelessWidget {
 // ── Permit Form Bottom Sheet ──
 class _PermitFormSheet extends StatelessWidget {
   final PermitController controller;
-  final _PermitTab tab;
-  const _PermitFormSheet({required this.controller, required this.tab});
+  const _PermitFormSheet({required this.controller});
 
   @override
   Widget build(BuildContext context) {
-    // Leave tab still needs a sub-picker because BE has 3 sub-categories
-    // (leave/sick/permit) folded under one UI tab.
-    final showLeaveSubPicker = tab.defaultFormCategory == 'leave';
-
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -625,17 +478,16 @@ class _PermitFormSheet extends StatelessWidget {
               ),
             ),
             Text(
-              tab.sheetTitle,
+              'New Request',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
 
-            if (showLeaveSubPicker) ...[
-              const _FieldLabel('Leave Type'),
-              const SizedBox(height: 8),
-              _LeaveSubPicker(controller: controller),
-              const SizedBox(height: 20),
-            ],
+            // ── Floating category picker (6 segments). Scrollable when narrow.
+            const _FieldLabel('Category'),
+            const SizedBox(height: 8),
+            _CategoryPicker(controller: controller),
+            const SizedBox(height: 20),
 
             // Type-specific form fields rebuild as `type` changes.
             Obx(() => _typeFields(context, controller.type.value)),
@@ -840,64 +692,64 @@ class _PermitFormSheet extends StatelessWidget {
   }
 }
 
-// 3-segment sub-picker only used by the Leave tab to disambiguate the
-// folded leave/sick/permit BE categories.
-class _LeaveSubPicker extends StatelessWidget {
+class _CategoryPicker extends StatelessWidget {
   final PermitController controller;
-  const _LeaveSubPicker({required this.controller});
-
-  static const List<String> _options = ['leave', 'sick', 'permit'];
+  const _CategoryPicker({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final current = controller.type.value;
-      return Row(
-        children: _options.map((t) {
-          final selected = current == t;
-          final color = permitTypeColor(t);
-          return Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(right: t == _options.last ? 0 : 8),
-              child: InkWell(
-                onTap: () => controller.type.value = t,
-                borderRadius: BorderRadius.circular(12),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 140),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? color.withValues(alpha: 0.10)
-                        : AppTheme.cardBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: selected ? color : AppTheme.cardBorder,
-                      width: selected ? 1.5 : 1,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(permitTypeIcon(t), color: color, size: 20),
-                      const SizedBox(height: 4),
-                      Text(
-                        permitTypeLabel(t),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: selected ? color : AppTheme.textPrimary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+      return SizedBox(
+        height: 76,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: kPermitTypes.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final t = kPermitTypes[i];
+            final selected = current == t;
+            final color = permitTypeColor(t);
+            return InkWell(
+              onTap: () => controller.type.value = t,
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 140),
+                width: 84,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? color.withValues(alpha: 0.10)
+                      : AppTheme.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected ? color : AppTheme.cardBorder,
+                    width: selected ? 1.5 : 1,
                   ),
                 ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(permitTypeIcon(t), color: color, size: 22),
+                    const SizedBox(height: 4),
+                    Text(
+                      permitTypeLabel(t),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: selected ? color : AppTheme.textPrimary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          },
+        ),
       );
     });
   }
