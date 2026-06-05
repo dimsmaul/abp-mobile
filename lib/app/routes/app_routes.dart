@@ -20,6 +20,10 @@ abstract class Routes {
   static const ANNOUNCEMENT_DETAIL = _Paths.ANNOUNCEMENT_DETAIL;
   static const PROFILE_EDIT = _Paths.PROFILE_EDIT;
   static const CHANGE_PASSWORD = _Paths.CHANGE_PASSWORD;
+  static const LEAVE = _Paths.LEAVE;
+  static const OVERTIME = _Paths.OVERTIME;
+  static const REIMBURSEMENT = _Paths.REIMBURSEMENT;
+  static const LOAN = _Paths.LOAN;
 }
 
 abstract class _Paths {
@@ -42,4 +46,8 @@ abstract class _Paths {
   static const ANNOUNCEMENT_DETAIL = '/announcements/detail';
   static const PROFILE_EDIT = '/profile/edit';
   static const CHANGE_PASSWORD = '/profile/change-password';
+  static const LEAVE = '/leave';
+  static const OVERTIME = '/overtime';
+  static const REIMBURSEMENT = '/reimbursement';
+  static const LOAN = '/loan';
 }

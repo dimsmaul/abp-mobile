@@ -7,35 +7,88 @@ import '../../../core/theme.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../controllers/permit_controller.dart';
 
+// Categories supported by the BE. The mobile home shortcuts only expose
+// the four "active" ones — sick + permit stay valid for legacy data.
+const _kAllCategories = <String>{
+  'leave',
+  'sick',
+  'permit',
+  'overtime',
+  'reimburse',
+  'loan',
+};
+
+String _titleForCategory(String c) {
+  switch (c) {
+    case 'leave':
+      return 'Leave Requests';
+    case 'sick':
+      return 'Sick Requests';
+    case 'permit':
+      return 'Permit Requests';
+    case 'overtime':
+      return 'Overtime';
+    case 'reimburse':
+      return 'Reimbursements';
+    case 'loan':
+      return 'Loan Requests';
+    default:
+      return 'Requests';
+  }
+}
+
 class PermitView extends GetView<PermitController> {
   const PermitView({super.key});
+
+  /// Optional category lock — when this view is opened via the dedicated
+  /// home-screen shortcut (e.g. `Get.toNamed('/leave')`), the route
+  /// arguments carry the category we should filter to. When opened as the
+  /// dashboard tab the arg is absent and the page shows every category.
+  String? get _lockedCategory {
+    final args = Get.arguments;
+    if (args is Map) {
+      final c = args['category'];
+      if (c is String && _kAllCategories.contains(c)) return c;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     final embeddedInDashboard = Get.isRegistered<DashboardController>();
+    final locked = _lockedCategory;
+    final title = locked == null
+        ? 'My Requests'
+        : _titleForCategory(locked);
+    final showLeaveBalance = locked == null || locked == 'leave';
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('My Requests'),
+        title: Text(title),
         backgroundColor: AppTheme.scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
         foregroundColor: AppTheme.textPrimary,
         // No back button when shown as a dashboard tab.
-        leading: embeddedInDashboard
+        leading: embeddedInDashboard && locked == null
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Get.back(),
               ),
-        automaticallyImplyLeading: !embeddedInDashboard,
+        automaticallyImplyLeading: !(embeddedInDashboard && locked == null),
       ),
       body: SafeArea(
         child: Obx(() {
           final isInitialLoading =
               controller.isLoading.value && controller.permits.isEmpty;
+          final visible = locked == null
+              ? controller.permits.toList()
+              : controller.permits
+                  .where((p) => p['category']?.toString() == locked)
+                  .toList();
 
-          if (!isInitialLoading && controller.permits.isEmpty) {
+          if (!isInitialLoading && visible.isEmpty) {
             return LayoutBuilder(
               builder: (ctx, bc) => RefreshIndicator(
                 onRefresh: () async {
@@ -50,10 +103,12 @@ class PermitView extends GetView<PermitController> {
                     child: IntrinsicHeight(
                       child: Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                            child: _LeaveBalanceCard(controller: controller),
-                          ),
+                          if (showLeaveBalance)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                              child: _LeaveBalanceCard(controller: controller),
+                            ),
                           const Expanded(child: Center(child: _Empty())),
                         ],
                       ),
@@ -74,29 +129,36 @@ class PermitView extends GetView<PermitController> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 96),
               children: [
-                _LeaveBalanceCard(controller: controller),
-                Obx(() => controller.leaveBalance.value == null
-                    ? const SizedBox.shrink()
-                    : const SizedBox(height: 16)),
+                if (showLeaveBalance) _LeaveBalanceCard(controller: controller),
+                if (showLeaveBalance)
+                  Obx(() => controller.leaveBalance.value == null
+                      ? const SizedBox.shrink()
+                      : const SizedBox(height: 16)),
                 if (isInitialLoading)
                   ...List.generate(3, (_) => const _Skeleton())
                 else
-                  ...controller.permits.map((p) => _PermitCard(permit: p)),
+                  ...visible.map((p) => _PermitCard(permit: p)),
               ],
             ),
           );
         }),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddPermitSheet(context),
+        onPressed: () => _showAddPermitSheet(context, locked),
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  void _showAddPermitSheet(BuildContext context) {
+  void _showAddPermitSheet(BuildContext context, String? lockedCategory) {
+    if (lockedCategory != null) {
+      controller.type.value = lockedCategory;
+    }
     Get.bottomSheet(
-      _PermitFormSheet(controller: controller),
+      _PermitFormSheet(
+        controller: controller,
+        lockedCategory: lockedCategory,
+      ),
       isScrollControlled: true,
     );
   }
@@ -451,10 +513,20 @@ class _Skeleton extends StatelessWidget {
 // ── Permit Form Bottom Sheet ──
 class _PermitFormSheet extends StatelessWidget {
   final PermitController controller;
-  const _PermitFormSheet({required this.controller});
+  /// When set, the category picker is hidden and the form is locked to
+  /// this category. Used by the dedicated home-screen shortcuts so the
+  /// user never has to pick a category they already explicitly chose.
+  final String? lockedCategory;
+  const _PermitFormSheet({
+    required this.controller,
+    this.lockedCategory,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final title = lockedCategory == null
+        ? 'New Request'
+        : 'New ${_titleForCategory(lockedCategory!).replaceAll(' Requests', '').replaceAll('s', 's')}';
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -478,16 +550,18 @@ class _PermitFormSheet extends StatelessWidget {
               ),
             ),
             Text(
-              'New Request',
+              title,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
 
-            // ── Floating category picker (6 segments). Scrollable when narrow.
-            const _FieldLabel('Category'),
-            const SizedBox(height: 8),
-            _CategoryPicker(controller: controller),
-            const SizedBox(height: 20),
+            if (lockedCategory == null) ...[
+              // ── Floating category picker (6 segments). Scrollable when narrow.
+              const _FieldLabel('Category'),
+              const SizedBox(height: 8),
+              _CategoryPicker(controller: controller),
+              const SizedBox(height: 20),
+            ],
 
             // Type-specific form fields rebuild as `type` changes.
             Obx(() => _typeFields(context, controller.type.value)),

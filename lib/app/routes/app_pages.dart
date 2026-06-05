@@ -112,6 +112,29 @@ class AppPages {
       page: () => const PermitView(),
       binding: PermitBinding(),
     ),
+    // Category-locked entry points — all reuse the same PermitView and
+    // controller, but pass `category` via Get.arguments so the page filters
+    // its list + locks the create-form to that single category.
+    GetPage(
+      name: _Paths.LEAVE,
+      page: () => const PermitView(),
+      binding: PermitBinding(),
+    ),
+    GetPage(
+      name: _Paths.OVERTIME,
+      page: () => const PermitView(),
+      binding: PermitBinding(),
+    ),
+    GetPage(
+      name: _Paths.REIMBURSEMENT,
+      page: () => const PermitView(),
+      binding: PermitBinding(),
+    ),
+    GetPage(
+      name: _Paths.LOAN,
+      page: () => const PermitView(),
+      binding: PermitBinding(),
+    ),
     GetPage(
       name: _Paths.ANNOUNCEMENT_LIST,
       page: () => const AnnouncementListView(),

@@ -97,6 +97,17 @@ class HomeController extends GetxController {
     }
     Get.toNamed('/permit');
   }
+
+  // Category-locked entry points. Each pushes the dedicated route so the
+  // page filters its list + locks the create form to that single category.
+  void goToLeave() =>
+      Get.toNamed('/leave', arguments: const {'category': 'leave'});
+  void goToOvertime() =>
+      Get.toNamed('/overtime', arguments: const {'category': 'overtime'});
+  void goToReimbursement() =>
+      Get.toNamed('/reimbursement', arguments: const {'category': 'reimburse'});
+  void goToLoan() =>
+      Get.toNamed('/loan', arguments: const {'category': 'loan'});
   void goToAnnouncements() => Get.toNamed('/announcements');
   void openAnnouncementDetail(String id) =>
       Get.toNamed('/announcements/detail', arguments: id);
