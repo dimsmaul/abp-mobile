@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/avatar_bubble.dart';
 import '../../../core/theme.dart';
 import '../../../data/services/attendance_queue_service.dart';
+import '../../../data/services/notification_service.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -129,24 +130,58 @@ class HomeView extends GetView<HomeController> {
             ],
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppTheme.cardBorder),
-          ),
-          child: IconButton(
-            onPressed: controller.goToAnnouncements,
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: AppTheme.textSecondary,
-              size: 20,
-            ),
-            tooltip: 'Announcements',
-          ),
-        ),
+        _buildBellIcon(),
       ],
     );
+  }
+
+  Widget _buildBellIcon() {
+    final notif = Get.isRegistered<NotificationService>()
+        ? Get.find<NotificationService>()
+        : null;
+    final bell = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppTheme.cardBorder),
+      ),
+      child: IconButton(
+        onPressed: () {
+          notif?.resetUnread();
+          controller.goToAnnouncements();
+        },
+        icon: const Icon(
+          Icons.notifications_none_rounded,
+          color: AppTheme.textSecondary,
+          size: 20,
+        ),
+        tooltip: 'Announcements',
+      ),
+    );
+    if (notif == null) return bell;
+    return Obx(() {
+      final hasUnread = notif.unreadCount.value > 0;
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          bell,
+          if (hasUnread)
+            Positioned(
+              top: 6,
+              right: 6,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppTheme.danger,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1),
+                ),
+              ),
+            ),
+        ],
+      );
+    });
   }
 
   Widget _buildPendingBadge() {

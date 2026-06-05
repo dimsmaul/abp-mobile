@@ -38,9 +38,32 @@ class ApiService extends GetxService {
         if (options.data is! FormData) {
           options.headers['Content-Type'] = 'application/json';
         }
+        // Timing probe — fires on every request to expose slow round-trips.
+        // Stash the start timestamp on the request's `extra` map so the
+        // response/error interceptors below can measure duration.
+        options.extra['_startMs'] = DateTime.now().millisecondsSinceEpoch;
+        // ignore: avoid_print
+        print('[dio] → ${options.method} ${options.uri}');
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        final start = response.requestOptions.extra['_startMs'];
+        if (start is int) {
+          final ms = DateTime.now().millisecondsSinceEpoch - start;
+          // ignore: avoid_print
+          print(
+              '[dio] ← ${response.statusCode} ${response.requestOptions.uri} ${ms}ms');
+        }
+        return handler.next(response);
+      },
       onError: (DioException e, handler) {
+        final start = e.requestOptions.extra['_startMs'];
+        if (start is int) {
+          final ms = DateTime.now().millisecondsSinceEpoch - start;
+          // ignore: avoid_print
+          print(
+              '[dio] ✕ ${e.response?.statusCode ?? e.type.name} ${e.requestOptions.uri} ${ms}ms');
+        }
         if (e.response?.statusCode == 401) {
           _handleSessionExpired();
         }

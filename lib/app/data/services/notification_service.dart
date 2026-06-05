@@ -26,6 +26,13 @@ class NotificationService extends GetxService {
   final isInitialized = false.obs;
   final fcmToken = Rxn<String>();
 
+  /// Count of foreground push messages received since last reset. Home view
+  /// reads this to render a red dot on the bell icon; tapping the bell
+  /// navigates to the announcements list and calls [resetUnread].
+  final unreadCount = 0.obs;
+
+  void resetUnread() => unreadCount.value = 0;
+
   @override
   void onInit() {
     super.onInit();
@@ -84,6 +91,7 @@ class NotificationService extends GetxService {
         final title = msg.notification?.title ?? msg.data['title']?.toString();
         final body = msg.notification?.body ?? msg.data['body']?.toString();
         if (title != null || body != null) {
+          unreadCount.value++;
           Get.snackbar(title ?? 'Notification', body ?? '');
         }
       });

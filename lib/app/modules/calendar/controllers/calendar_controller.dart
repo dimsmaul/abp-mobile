@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' hide Response;
 import 'package:intl/intl.dart';
 
@@ -40,6 +41,14 @@ class CalendarController extends GetxController {
       if (res.statusCode == 200) {
         final data = res.data['data'];
         final list = data is List ? data : (data is Map ? data['items'] : null);
+        // TEMP DEBUG — verify BE response shape (status field name + values).
+        // Remove once calendar dots render correctly.
+        if (kDebugMode && list is List) {
+          debugPrint('[calendar] month=$monthParam count=${list.length}');
+          for (final raw in list.take(2)) {
+            debugPrint('[calendar] sample=$raw');
+          }
+        }
         final map = <String, Map>{};
         if (list is List) {
           for (final raw in list) {

@@ -23,10 +23,9 @@ class ReportsListView extends GetView<ReportsController> {
           onPressed: () => Get.back(),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => Get.toNamed('/reports/create'),
-        icon: const Icon(Icons.add),
-        label: const Text('New Report'),
+        child: const Icon(Icons.add),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -303,16 +302,6 @@ class _Empty extends StatelessWidget {
             'Submit your first field report',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppTheme.textHint, fontSize: 12),
-          ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: () => Get.toNamed('/reports/create'),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('New Report'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 44),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-            ),
           ),
         ],
       ),
