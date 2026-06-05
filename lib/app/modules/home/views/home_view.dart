@@ -338,27 +338,60 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildQuickActions(TextTheme textTheme) {
-    return Row(
+    // 2×3 grid — row 1: loan / overtime / reimbursement, row 2: leave /
+    // reports / history. Each request action navigates to its own
+    // category-locked route so the user lands directly on the right list +
+    // pre-filled form.
+    return Column(
       children: [
-        _action(
-          icon: Icons.assignment_outlined,
-          label: 'Reports',
-          tint: AppTheme.primary,
-          onTap: controller.goToReports,
+        Row(
+          children: [
+            _action(
+              icon: Icons.savings_outlined,
+              label: 'Loan',
+              tint: AppTheme.primary,
+              onTap: controller.goToLoan,
+            ),
+            const SizedBox(width: 12),
+            _action(
+              icon: Icons.schedule_outlined,
+              label: 'Overtime',
+              tint: AppTheme.warning,
+              onTap: controller.goToOvertime,
+            ),
+            const SizedBox(width: 12),
+            _action(
+              icon: Icons.receipt_long_outlined,
+              label: 'Reimburse',
+              tint: AppTheme.success,
+              onTap: controller.goToReimbursement,
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        _action(
-          icon: Icons.history_rounded,
-          label: 'History',
-          tint: AppTheme.success,
-          onTap: controller.goToHistory,
-        ),
-        const SizedBox(width: 12),
-        _action(
-          icon: Icons.event_note_outlined,
-          label: 'Requests',
-          tint: AppTheme.warning,
-          onTap: controller.goToPermit,
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _action(
+              icon: Icons.event_available_outlined,
+              label: 'Leave',
+              tint: AppTheme.danger,
+              onTap: controller.goToLeave,
+            ),
+            const SizedBox(width: 12),
+            _action(
+              icon: Icons.assignment_outlined,
+              label: 'Reports',
+              tint: AppTheme.primary,
+              onTap: controller.goToReports,
+            ),
+            const SizedBox(width: 12),
+            _action(
+              icon: Icons.history_rounded,
+              label: 'History',
+              tint: AppTheme.success,
+              onTap: controller.goToHistory,
+            ),
+          ],
         ),
       ],
     );
