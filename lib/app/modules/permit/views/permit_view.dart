@@ -578,10 +578,6 @@ class _PermitFormSheet extends StatelessWidget {
               style: const TextStyle(color: AppTheme.textPrimary),
               decoration: const InputDecoration(
                 hintText: 'At least 10 characters — explain briefly',
-                prefixIcon: Padding(
-                  padding: EdgeInsets.only(bottom: 36),
-                  child: Icon(Icons.notes, size: 20),
-                ),
               ),
             ),
 
