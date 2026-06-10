@@ -14,6 +14,10 @@ class PermitController extends GetxController {
   final isLoading = false.obs;
   final isSubmitting = false.obs;
 
+  // ── Detail state ────────────────────────────────────────
+  final detail = Rxn<Map>();
+  final isDetailLoading = false.obs;
+
   // ── Form fields ─────────────────────────────────────────
   // Default 'leave' per multi-type spec (was 'sick' before).
   final type = 'leave'.obs;
@@ -83,6 +87,24 @@ class PermitController extends GetxController {
       return 'Remaining leave $remaining days, requested $requested working days';
     }
     return null;
+  }
+
+  /// Open detail view for a permit by id. Clears prior state + navigates
+  /// immediately so the view renders a skeleton instead of stale data.
+  Future<void> openDetail(String id) async {
+    detail.value = null;
+    isDetailLoading.value = true;
+    Get.toNamed('/permit/detail', arguments: id);
+    try {
+      final res = await apiService.fetchPermitDetail(id);
+      if (res.statusCode == 200) {
+        detail.value = Map<String, dynamic>.from(res.data['data'] as Map);
+      }
+    } on DioException catch (e) {
+      Get.snackbar('Error', dioErrorMessage(e, 'Failed to load permit'));
+    } finally {
+      isDetailLoading.value = false;
+    }
   }
 
   Future<void> fetchMyPermits() async {
@@ -170,30 +192,44 @@ class PermitController extends GetxController {
 
     isSubmitting.value = true;
     try {
-      // Build a per-type payload. For types with a photo we send multipart;
-      // otherwise plain JSON via the same endpoint (BE handler accepts both).
+      // BE has two columns: legacy `type` (sick/leave/permit) and the newer
+      // `category` (adds overtime/reimburse/loan). For the new categories
+      // we send type='permit' as the legacy placeholder and put the real
+      // value in `category`. Field names must match the BE Zod schema.
+      const legacyTypes = {'leave', 'sick', 'permit'};
+      final isLegacy = legacyTypes.contains(type.value);
       final body = <String, dynamic>{
-        'type': type.value,
+        'type': isLegacy ? type.value : 'permit',
+        'category': type.value,
         'description': desc,
       };
 
+      // BE requires startDate + endDate for every category. For single-date
+      // types we send the same date twice; loan has no date in the UI so we
+      // fall back to today.
       if (_usesDateRange) {
         body['startDate'] = startDate.value!.toIso8601String();
         body['endDate'] = endDate.value!.toIso8601String();
       } else if (_usesSingleDate) {
-        body['date'] = eventDate.value!.toIso8601String();
+        final iso = eventDate.value!.toIso8601String();
+        body['startDate'] = iso;
+        body['endDate'] = iso;
+      } else {
+        final iso = DateTime.now().toIso8601String();
+        body['startDate'] = iso;
+        body['endDate'] = iso;
       }
 
       if (type.value == 'overtime') {
-        body['hours'] =
+        body['overtimeHours'] =
             double.tryParse(overtimeHoursController.text.trim()) ?? 0;
       }
       if (type.value == 'reimburse') {
-        body['amount'] = _parseAmount(amountController.text) ?? 0;
+        body['reimburseAmount'] = _parseAmount(amountController.text) ?? 0;
       }
       if (type.value == 'loan') {
-        body['amount'] = _parseAmount(amountController.text) ?? 0;
-        body['tenorMonths'] =
+        body['loanAmount'] = _parseAmount(amountController.text) ?? 0;
+        body['loanTenorMonths'] =
             int.tryParse(tenorMonthsController.text.trim()) ?? 0;
       }
 
@@ -215,12 +251,18 @@ class PermitController extends GetxController {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final msg = response.data['message'] ?? 'Request submitted';
+        // Close the bottom sheet FIRST. Two reasons:
+        //  1. _resetForm() flips `type` back to 'leave', which would otherwise
+        //     rebuild the visible form into the wrong category for a frame.
+        //  2. Showing the snackbar before Get.back() can cause Get.back to
+        //     dismiss the snackbar overlay instead of the sheet on some
+        //     GetX configurations.
+        if (Get.isBottomSheetOpen ?? false) Get.back();
         Get.snackbar('Success', msg);
         _resetForm();
         fetchMyPermits();
         // Server may have charged the balance; refresh to reflect new used_days.
         loadLeaveBalance();
-        Get.back();
       }
     } on DioException catch (e) {
       Get.snackbar('Error', dioErrorMessage(e, 'Failed to submit request'));

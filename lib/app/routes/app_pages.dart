@@ -10,6 +10,7 @@ import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/permit/bindings/permit_binding.dart';
 import '../modules/permit/views/permit_view.dart';
+import '../modules/permit/views/permit_detail_view.dart';
 import '../modules/announcement/bindings/announcement_binding.dart';
 import '../modules/announcement/views/announcement_list_view.dart';
 import '../modules/announcement/views/announcement_detail_view.dart';
@@ -110,6 +111,11 @@ class AppPages {
     GetPage(
       name: _Paths.PERMIT,
       page: () => const PermitView(),
+      binding: PermitBinding(),
+    ),
+    GetPage(
+      name: _Paths.PERMIT_DETAIL,
+      page: () => const PermitDetailView(),
       binding: PermitBinding(),
     ),
     // Category-locked entry points — all reuse the same PermitView and
