@@ -249,29 +249,47 @@ class _PermitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusStr = permit['status']?.toString() ?? 'pending';
-    final typeStr = permit['type']?.toString() ?? '';
+    // Prefer `category` (newer) but fall back to legacy `type` for old rows.
+    final categoryStr = (permit['category']?.toString().isNotEmpty ?? false)
+        ? permit['category'].toString()
+        : (permit['type']?.toString() ?? '');
     final desc = permit['description']?.toString() ?? '';
     final attachmentUrl = permit['attachmentUrl']?.toString();
+    final permitId = permit['id']?.toString();
 
     final startDate = DateTime.tryParse(permit['startDate']?.toString() ?? '');
     final endDate = DateTime.tryParse(permit['endDate']?.toString() ?? '');
     final singleDate = DateTime.tryParse(permit['date']?.toString() ?? '');
     String rangeStr;
     if (startDate != null && endDate != null) {
-      rangeStr =
-          '${DateFormat('dd MMM').format(startDate)} – ${DateFormat('dd MMM yyyy').format(endDate)}';
+      // For categories that use a single date, BE stores start == end —
+      // collapse so the UI doesn't show "10 Jun – 10 Jun 2026".
+      if (startDate.isAtSameMomentAs(endDate)) {
+        rangeStr = DateFormat('dd MMM yyyy').format(startDate);
+      } else {
+        rangeStr =
+            '${DateFormat('dd MMM').format(startDate)} – ${DateFormat('dd MMM yyyy').format(endDate)}';
+      }
     } else if (singleDate != null) {
       rangeStr = DateFormat('dd MMM yyyy').format(singleDate);
     } else {
       rangeStr = '-';
     }
 
-    final typeIcon = permitTypeIcon(typeStr);
-    final typeColor = permitTypeColor(typeStr);
+    final typeIcon = permitTypeIcon(categoryStr);
+    final typeColor = permitTypeColor(categoryStr);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
+      child: Material(
+        color: AppTheme.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: permitId == null
+              ? null
+              : () => Get.find<PermitController>().openDetail(permitId),
+          child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.cardBg,
@@ -302,7 +320,7 @@ class _PermitCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              permitTypeLabel(typeStr),
+                              permitTypeLabel(categoryStr),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -313,7 +331,7 @@ class _PermitCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          _typeChip(typeStr, typeColor),
+                          _typeChip(categoryStr, typeColor),
                         ],
                       ),
                       const SizedBox(height: 2),
@@ -374,6 +392,8 @@ class _PermitCard extends StatelessWidget {
               ),
             ],
           ],
+        ),
+          ),
         ),
       ),
     );
